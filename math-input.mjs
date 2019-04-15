@@ -2,11 +2,31 @@ const tagname = 'math-input';
 const template = document.createElement('template');
 template.innerHTML = `
     <style type='text/css'>
-        .wrapper {width:100px; height:100px; border:1px solid #ff0000;}
+        .wrapper {
+            display: inline-block;
+            border: 1px solid;
+            padding: 3px;
+            background-color: #ffffff;
+            min-width: 200px;
+            min-height: 20px;
+            white-space: nowrap;
+            overflow: hidden;
+            cursor: text;
+        }
     </style>
     <div id='wrapper' class='wrapper'>
     </div>
 `
+
+// `
+// <div class="mathinput" ng-class="{'mathinput-error': !output.isValid}" tabindex="0"
+//  ng-keypress="control.keypress($event)" ng-keydown="control.keydown($event)" ng-focus="control.focus()"
+//  ng-blur="control.blur()" ng-copy="control.copy()" ng-cut="control.cut()" ng-paste="control.paste($event)">
+// <adm-math-expression cursor="cursor" expression="literalTree" control="control"></adm-math-expression>
+// <input type="hidden" name="{{name}}" value="{{model}}" />
+// <input type="hidden" class="clipboard" />
+// </div>
+// `
 
 class MathInput extends HTMLElement {
     constructor() {
@@ -15,13 +35,7 @@ class MathInput extends HTMLElement {
         this.attachShadow({mode: 'open'});
         this.shadowRoot.appendChild(template.content.cloneNode(true));
 
-        this.addEventListener('keydown', function(e) {
-            var value = this.getAttribute('value');
-            if(value === null)
-                value = '';
-
-            this.setAttribute('value', value + e.key);
-        });
+        this.addEventListener('keydown', this.keydown);
     }
 
     connectedCallback() {
@@ -45,6 +59,25 @@ class MathInput extends HTMLElement {
 
     static get observedAttributes() {
         return ['value'];
+    }
+
+    keydown(e) {
+        if(e.ctrlKey)   //don't capture control combinations
+            return;
+        
+        var character = e.key || e.keyCode;
+        if(/^[a-zA-Z0-9.+\-*()\^|,='<>~]$/.test(character)) {
+            this.insert(character);
+            e.preventDefault();
+        }
+
+        // scope.output.write();
+    }
+
+    insert(character) {
+        var value = this.getAttribute('value') || '';
+
+        this.setAttribute('value', value + character);
     }
 }
 
