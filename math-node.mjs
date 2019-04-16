@@ -114,7 +114,7 @@ class MathNode {
      * @return {MathNode} The resultant MathNode
      */
     static buildFromCharacter(char) {
-        if(/^[0-9.+\-*]$/.test(char)) {
+        if(/^[a-zA-Z0-9.+\-*]$/.test(char)) {
             return new AtomNode(char);
         } else {
             throw new Error('Not yet implemented: ' + char);
@@ -171,28 +171,49 @@ class ExpressionNode extends MathNode {
      * string representing them. Recursive. `offset` keeps track of where the
      * subset is in `_nodes` to allow for referencing the nodes themselves.
      *
+     * `offset` starts at 1 to accomodate the StartNode, which isn't
+     * represented in the precis
+     *
      * @see  UnitNode.precis()
      * @param  {String} precis A precis of a set of nodes
-     * @param  {Number} offset The offset between start of `precis` and start of `_nodes`
+     * @param  {Number} offset The offset between `precis` and `_nodes`
      * @return {String}        A MathML string
      */
-    _parse(precis, offset=0) {
+    _parse(precis, offset=1) {
+        console.log(precis);
+        console.log(this.nodes[offset]);
         //matches last +/-. Needs to be done in reverse order: consider a-b+c
         var match = precis.match(/[+\-](?!.*[+\-])/);
         if(match !== null) {
-            return this._parse_operator(precis, offset, match.index);
+            return this._parseOperator(precis, offset, match.index);
         }
 
+        //match a times symbol
         var match = precis.match(/\*/);
         if(match !== null) {
-            return this._parse_operator(precis, offset, match.index);
+            return this._parseOperator(precis, offset, match.index);
         }
 
-        if(/^[0-9]+(\.[0-9]+)?$/.test(precis)) {
-            return '<cn>' + precis + '</cn>';
-        } else {
-            throw new Error('Cannot parse input.');
+        //match an initial number/character with more to follow
+        var match = precis.match(/^([0-9]+(.[0-9]+)?(?=[^.0-9])|[a-zA-Z](?=.+))/);
+        if(match !== null) {
+            return this._parseImplicitTimes(precis, offset, match[0].length);
         }
+
+        //match a number and nothing else
+        var match = precis.match(/^[0-9]+(.[0-9]+)?$/);
+        if(match !== null) {
+            return '<cn>' + precis + '</cn>';
+        }
+
+        //match a letter and nothing else
+        var match = precis.match(/^[a-zA-Z]$/);
+        if(match !== null) {
+            return '<ci>' + precis + '</ci>';
+        }
+
+        //if no match has been found
+        throw new Error('Cannot parse input.');
     }
 
     /**
@@ -200,11 +221,11 @@ class ExpressionNode extends MathNode {
      * process both sides, then return the resultant MathML string.
      * 
      * @param  {String} precis      A precis of a set of nodes
-     * @param  {Number} offset      The offset between start of `precis` and start of `_nodes`
+     * @param  {Number} offset      The offset between `precis` and `_nodes`
      * @param  {Number} operatorPos The position of the found operator
      * @return {String}             A MathML string
      */
-    _parse_operator(precis, offset, operatorPos) {
+    _parseOperator(precis, offset, operatorPos) {
         var op = precis[operatorPos];
         var lhs = this._parse(
             precis.substring(0, operatorPos),
@@ -216,6 +237,22 @@ class ExpressionNode extends MathNode {
         var op_tags = {'+': '<plus/>', '-': '<minus/>', '*': '<times/>'};
 
         return '<apply>' + op_tags[op] + lhs + rhs + '</apply>';
+    }
+
+    /**
+     * Having found an implicit times, split precis in two, parse both sides,
+     * combine with a times operator.
+     * 
+     * @param  {String} precis A precis of a set of nodes
+     * @param  {Number} offset The offset between `precis` and `_nodes`
+     * @param  {Number} split  The position of the implicit times
+     * @return {String}        A MathML string
+     */
+    _parseImplicitTimes(precis, offset, split) {
+        var lhs = this._parse(precis.substring(0, split), offset);
+        var rhs = this._parse(precis.substring(split), offset + split);
+
+        return '<apply><times/>' + lhs + rhs + '</apply>';
     }
 
     /**
