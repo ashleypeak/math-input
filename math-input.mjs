@@ -1,4 +1,4 @@
-import {LiteralExpressionNode, LiteralNode} from './literal-node.mjs';
+import {ExpressionNode, MathNode} from './math-node.mjs';
 
 const tagname = 'math-input';
 const cursorSpeed = 530;
@@ -60,7 +60,7 @@ class MathInput extends HTMLElement {
         this.shadowRoot.appendChild(template.content.cloneNode(true));
         this.wrapper = this.shadowRoot.getElementById('wrapper');
 
-        this.rootNode = new LiteralExpressionNode(null);
+        this.rootNode = new ExpressionNode(null);
         this.expression = this.rootNode;
         this._cursorNode = this.expression.nodes[0];
 
@@ -187,7 +187,7 @@ class MathInput extends HTMLElement {
      * Set cursorNode. Remove the cursor class from the previous cursor node
      * before changing.
      * 
-     * @param  {LiteralNode} node The new cursorNode
+     * @param  {MathNode} node The new cursorNode
      */
     set cursorNode(node) {
         this._cursorNode.toggleCursor(false);
@@ -204,7 +204,7 @@ class MathInput extends HTMLElement {
      * @param  {string} char The character to insert as a new node
      */
     insert(char) {
-        var node = LiteralNode.buildFromCharacter(char);
+        var node = MathNode.buildFromCharacter(char);
         this.cursorNode.insertAfter(node);
         this.cursorNode = node;
 

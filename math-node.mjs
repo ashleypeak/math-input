@@ -1,14 +1,14 @@
 /**
  * Virtual class, don't instantiate.
  *
- * LiteralNode and its children represent the equation as it appears in the
+ * MathNode and its children represent the equation as it appears in the
  * input field with only enough structure to render (e.g. it has a Division
  * node to render numerator/denominator, but doesn't distinguish between other
  * operators).
  *
- * Convert to a SemanticNode for structure.
+ * Outputs semantic MathML through function ExpressionNode.value()
  */
-class LiteralNode {
+class MathNode {
     /**
      * @constructs
      */
@@ -22,7 +22,7 @@ class LiteralNode {
     /**
      * Get the parent node
      * 
-     * @return {LiteralNode} The parent of the current node
+     * @return {MathNode} The parent of the current node
      */
     get parent() {
         return this._parent;
@@ -31,14 +31,14 @@ class LiteralNode {
     /**
      * Set parent node
      * 
-     * @param  {LiteralNode} parent The new parent node of this element
+     * @param  {MathNode} parent The new parent node of this element
      */
     set parent(parent) {
         this._parent = parent;
     }
 
     /**
-     * Get the DOM node of the LiteralNode. LiteralNodes maintain their own
+     * Get the DOM node of the MathNode. MathNodes maintain their own
      * DOM elements
      *
      * @return {HTMLElement} The DOM element representing the node value
@@ -54,7 +54,7 @@ class LiteralNode {
      *
      * If the cursor can't move left, return self.
      *
-     * @return {LiteralNode} The node to the left of this node
+     * @return {MathNode} The node to the left of this node
      */
      get nodeLeft() {
         if(this.parent !== null) {
@@ -68,7 +68,7 @@ class LiteralNode {
      * Get the element to the right of the current node.
      *
      * @see  nodeLeft()
-     * @return {LiteralNode} The node to the right of this node
+     * @return {MathNode} The node to the right of this node
      */
      get nodeRight() {
         if(this.parent !== null) {
@@ -84,7 +84,7 @@ class LiteralNode {
     /**
      * Insert the node `node` after `this`.
      * 
-     * @param  {LiteralNode} node The node to be inserted
+     * @param  {MathNode} node The node to be inserted
      */
     insertAfter(node) {
         if(this.parent === null) {
@@ -108,14 +108,14 @@ class LiteralNode {
 
     /**
      * Take a character (from input, usually) and determine based on value
-     * what LiteralNode class to return.
+     * what MathNode class to return.
      * 
-     * @param  {String} char The character to create a LiteralNode from
-     * @return {LiteralNode} The resultant LiteralNode
+     * @param  {String} char The character to create a MathNode from
+     * @return {MathNode} The resultant MathNode
      */
     static buildFromCharacter(char) {
         if(/^[0-9.+\-*]$/.test(char)) {
-            return new LiteralAtomNode(char);
+            return new AtomNode(char);
         } else {
             throw new Error('Not yet implemented: ' + char);
         }
@@ -124,15 +124,15 @@ class LiteralNode {
 
 
 /**
- * LiteralExpressionNode contains any string of nodes which doesn't need to
+ * ExpressionNode contains any string of nodes which doesn't need to
  * be distinguished for display purposes. Divisions, Exponents etc will have
- * other LiteralNode types, but anything else will be stored in the array
+ * other MathNode types, but anything else will be stored in the array
  * this._nodes.
  *
  * The numerator and denominator of a division, exponent of a power etc. are
  * all ExpressionNodes, as is the root node of the MathInput.
  */
-class LiteralExpressionNode extends LiteralNode {
+class ExpressionNode extends MathNode {
     /**
      * @constructs
      */
@@ -146,7 +146,7 @@ class LiteralExpressionNode extends LiteralNode {
         //the first element
         //has to be inserted manually because there is no child in a new ExpressionNode
         //to insert it after
-        var startNode = new LiteralExpressionStartNode();
+        var startNode = new StartNode();
         startNode.parent = this;
         this._nodes.push(startNode);
         this._element.appendChild(startNode.element);
@@ -171,7 +171,7 @@ class LiteralExpressionNode extends LiteralNode {
      * string representing them. Recursive. `offset` keeps track of where the
      * subset is in `_nodes` to allow for referencing the nodes themselves.
      *
-     * @see  LiteralUnitNode.precis()
+     * @see  UnitNode.precis()
      * @param  {String} precis A precis of a set of nodes
      * @param  {Number} offset The offset between start of `precis` and start of `_nodes`
      * @return {String}        A MathML string
@@ -233,8 +233,8 @@ class LiteralExpressionNode extends LiteralNode {
     /**
      * Insert a node `newNode` after the node `child`
      * 
-     * @param  {LiteralNode} child   The child node after which newNode is being inserted
-     * @param  {LiteralNode} newNode The node being inserted
+     * @param  {MathNode} child   The child node after which newNode is being inserted
+     * @param  {MathNode} newNode The node being inserted
      */
     childInsertAfter(child, newNode) {
         var index = this.nodes.findIndex((el) => el == child);
@@ -261,8 +261,8 @@ class LiteralExpressionNode extends LiteralNode {
      * continue searching up the tree. Finding nothing, return `node` i.e.
      * don't move the cursor
      * 
-     * @param  {LiteralNode} node The node whose neighbour is being searched for
-     * @return {LiteralNode}      The node to the left of `node`
+     * @param  {MathNode} node The node whose neighbour is being searched for
+     * @return {MathNode}      The node to the left of `node`
      */
     childLeft(node) {
         var index = this.nodes.findIndex((el) => el == node);
@@ -284,8 +284,8 @@ class LiteralExpressionNode extends LiteralNode {
      * continue searching up the tree. Finding nothing, return `node` i.e.
      * don't move the cursor
      * 
-     * @param  {LiteralNode} node The node whose neighbour is being searched for
-     * @return {LiteralNode}      The node to the right of `node`
+     * @param  {MathNode} node The node whose neighbour is being searched for
+     * @return {MathNode}      The node to the right of `node`
      */
     childRight(node) {
         var index = this.nodes.findIndex((el) => el == node);
@@ -304,7 +304,7 @@ class LiteralExpressionNode extends LiteralNode {
     /**
      * Delete `node` from `_nodes` and remove from `_element`
      * 
-     * @param  {LiteralNode} node The node to be deleted
+     * @param  {MathNode} node The node to be deleted
      */
     childDelete(node) {
         var index = this.nodes.findIndex((el) => el == node);
@@ -322,19 +322,22 @@ class LiteralExpressionNode extends LiteralNode {
 /**
  * Virtual class, don't instantiate.
  *
- * A LiteralUnitNode is every element that isn't an ExpressionNode. Unlike
+ * A UnitNode is every element that isn't an ExpressionNode. Unlike
  * ExpressionNodes which are a formless string of nodes, UnitNodes are
  * unitary: they can be thought of as a single object whose internal structure
  * is largely irrelevant to their parents.
  */
-class LiteralUnitNode extends LiteralNode {
+class UnitNode extends MathNode {
+    /**
+     * @constructs
+     */
     constructor() {
         super();
     }
 
     /**
      * Get a single character representation of a UnitNode to allow for parsing.
-     * AtomNodes return their character, LiteralExpressionNodes return nothing,
+     * AtomNodes return their character, ExpressionNodes return nothing,
      * everything else returns '*'.
      *
      * @abstract
@@ -354,12 +357,12 @@ class LiteralUnitNode extends LiteralNode {
 
 
 /**
- * A LiteralExpressionStartNode is present as the first node of every
- * LiteralExpressionNode and nowhere else. Its purpose is to display the cursor
- * if it is left of every other element in the LiteralExpressionNode, and to
- * provide an anchor to click on / interact with an empty expression.
+ * A StartNode is present as the first node of every ExpressionNode and nowhere
+ * else. Its purpose is to display the cursor if it is left of every other
+ * element in the ExpressionNode, and to provide an anchor to click on /
+ * interact with an empty expression.
  */
-class LiteralExpressionStartNode extends LiteralUnitNode {
+class StartNode extends UnitNode {
     /**
      * @constructs
      */
@@ -380,7 +383,7 @@ class LiteralExpressionStartNode extends LiteralUnitNode {
 }
 
 
-class LiteralAtomNode extends LiteralUnitNode {
+class AtomNode extends UnitNode {
     /**
      * @constructs
      */
@@ -417,4 +420,4 @@ class LiteralAtomNode extends LiteralUnitNode {
     }
 }
 
-export {LiteralExpressionNode, LiteralNode};
+export {ExpressionNode, MathNode};
