@@ -134,17 +134,25 @@ class MathInput extends HTMLElement {
     keydown(e) {
         if(e.ctrlKey)   //don't capture control combinations
             return;
-        
+
         var character = e.key || e.keyCode;
         if(/^[a-zA-Z0-9.+\-*()\^|,='<>~]$/.test(character)) {
             this.insert(character);
             e.preventDefault();
         }
 
-        if(character == "ArrowLeft") {
+        if(character == 'ArrowLeft') {
             this.cursorNode = this.cursorNode.nodeLeft;
-        } else if(character == "ArrowRight") {
+        } else if(character == 'ArrowRight') {
             this.cursorNode = this.cursorNode.nodeRight;
+        } else if(character == 'Backspace') {
+            var oldCursor = this.cursorNode;
+            this.cursorNode = this.cursorNode.nodeLeft;
+
+            if(this.cursorNode != oldCursor) {
+                oldCursor.delete();
+                this.updateValue();
+            }
         }
     }
 

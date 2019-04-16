@@ -300,10 +300,28 @@ class LiteralExpressionNode extends LiteralNode {
             return node;
         }
     }
+
+    /**
+     * Delete `node` from `_nodes` and remove from `_element`
+     * 
+     * @param  {LiteralNode} node The node to be deleted
+     */
+    childDelete(node) {
+        var index = this.nodes.findIndex((el) => el == node);
+
+        if(index == -1) {
+            throw new Error("Node not found.");
+        }
+
+        this._nodes.splice(index, 1);
+        this._element.removeChild(node.element);
+    }
 }
 
 
 /**
+ * Virtual class, don't instantiate.
+ *
  * A LiteralUnitNode is every element that isn't an ExpressionNode. Unlike
  * ExpressionNodes which are a formless string of nodes, UnitNodes are
  * unitary: they can be thought of as a single object whose internal structure
@@ -326,6 +344,12 @@ class LiteralUnitNode extends LiteralNode {
         throw new Error('get precis() must be defined.');
     }
 
+    /**
+     * Delete this node
+     */
+    delete() {
+        this.parent.childDelete(this);
+    }
 }
 
 
