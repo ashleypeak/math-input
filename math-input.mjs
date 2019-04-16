@@ -19,6 +19,11 @@ template.innerHTML = `
             font-size: 12pt;
         }
 
+        .wrapper.error {
+            border-color: #d9534f;
+            background-color: #f2dede;
+        }
+
         .wrapper span {
             display: inline-block;
             vertical-align: middle;
@@ -148,7 +153,7 @@ class MathInput extends HTMLElement {
      */
     focus() {
         this._focused = true;
-        this.cursorNode.toggleCursor('on');
+        this.cursorNode.toggleCursor(true);
     }
 
     /**
@@ -156,7 +161,7 @@ class MathInput extends HTMLElement {
      */
     blur() {
         this._focused = false;
-        this.cursorNode.toggleCursor('off');
+        this.cursorNode.toggleCursor(false);
     }
 
 
@@ -177,9 +182,9 @@ class MathInput extends HTMLElement {
      * @param  {LiteralNode} node The new cursorNode
      */
     set cursorNode(node) {
-        this._cursorNode.toggleCursor('off');
+        this._cursorNode.toggleCursor(false);
         this._cursorNode = node;
-        this._cursorNode.toggleCursor('on');
+        this._cursorNode.toggleCursor(true);
     }
 
 
@@ -202,7 +207,15 @@ class MathInput extends HTMLElement {
      * Update the element's value to reflect the expression in rootNode
      */
     updateValue() {
-        this.setAttribute('value', this.rootNode.value);
+        try {
+            this.wrapper.classList.remove('error');
+
+            this.setAttribute('value', this.rootNode.value);
+            console.log(this.rootNode.value);
+        } catch(error) {
+            console.error(error);
+            this.wrapper.classList.add('error');
+        }
     }
 }
 

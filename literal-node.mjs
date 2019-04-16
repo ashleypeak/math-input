@@ -38,17 +38,6 @@ class LiteralNode {
     }
 
     /**
-     * Get the value - the string which will go into the value attribute.
-     * In future will be determined by output type.
-     *
-     * @abstract
-     * @return {String} The string to go in the value attribute
-     */
-    get value() {
-        throw new Error('get value() must be defined.');
-    }
-
-    /**
      * Get the DOM node of the LiteralNode. LiteralNodes maintain their own
      * DOM elements
      *
@@ -65,7 +54,6 @@ class LiteralNode {
      *
      * If the cursor can't move left, return self.
      *
-     * @abstract
      * @return {LiteralNode} The node to the left of this node
      */
      get nodeLeft() {
@@ -80,7 +68,6 @@ class LiteralNode {
      * Get the element to the right of the current node.
      *
      * @see  nodeLeft()
-     * @abstract
      * @return {LiteralNode} The node to the right of this node
      */
      get nodeRight() {
@@ -93,57 +80,6 @@ class LiteralNode {
     
 
     /** MISCELLANEOUS FUNCTIONS */
-
-    /**
-     * Add a class to the LiteralNode's DOM element, if not present
-     * 
-     * @param {string} className The class to be added
-     */
-    addClass(className) {
-        var classes = this._element.className.split(' ');
-
-        var classPos = classes.indexOf(className);
-        if(classPos === -1) {
-            classes.push(className);
-        }
-
-        this._element.className = classes.join(' ');
-    }
-
-    /**
-     * Remove a class from the LiteralNode's DOM element, if present
-     * 
-     * @param {string} className The class to be removed
-     */
-    removeClass(className) {
-        var classes = this._element.className.split(' ');
-
-        var classPos = classes.indexOf(className);
-        if(classPos !== -1) {
-            classes.splice(classPos, 1);
-        }
-
-        this._element.className = classes.join(' ');
-    }
-
-    /**
-     * Toggle a class on or off in the LiteralNode's DOM element,
-     * depending on current state
-     * 
-     * @param {string} className The class to be toggled
-     */
-    toggleClass(className) {
-        var classes = this._element.className.split(' ');
-
-        var classPos = classes.indexOf(className);
-        if(classPos !== -1) {
-            classes.splice(classPos, 1);
-        } else {
-            classes.push(className);
-        }
-
-        this._element.className = classes.join(' ');
-    }
 
     /**
      * Insert the node `node` after `this`.
@@ -161,16 +97,10 @@ class LiteralNode {
     /**
      * Toggle the cursor class. Used by MathInput.constuctor to flash cursor.
      * 
-     * @param  {String} state (on|off|toggle) Override toggle to show/hide cursor
+     * @param  {Boolean} force If true, show cursor; if false, hide; if null, togggle
      */
-    toggleCursor(state='toggle') {
-        if(state == 'toggle') {
-            this.toggleClass('cursor');
-        } else if(state == 'on') {
-            this.addClass('cursor');
-        } else if(state == 'off') {
-            this.removeClass('cursor');
-        }
+    toggleCursor(force) {
+        this._element.classList.toggle('cursor', force)
     }
 
 
@@ -184,9 +114,14 @@ class LiteralNode {
      * @return {LiteralNode} The resultant LiteralNode
      */
     static buildFromCharacter(char) {
-        return new LiteralCharacterNode(char);
+        if(/^[0-9.+\-*]$/.test(char)) {
+            return new LiteralAtomNode(char);
+        } else {
+            throw new Error('Not yet implemented: ' + char);
+        }
     }
 }
+
 
 /**
  * LiteralExpressionNode contains any string of nodes which doesn't need to
@@ -221,11 +156,66 @@ class LiteralExpressionNode extends LiteralNode {
     /** GETTERS AND SETTERS */
 
     /**
-     * @override
-     * @return {String} The string representing this element in the value attribute
+     * Returns a MathML string representing the expression in the field. Used
+     * to populate the 'value' attribute.
+     * 
+     * @return {String} The MathML string representing this element
      */
     get value() {
-        return this._nodes.reduce((acc, node) => acc + node.value, '');
+        var precis = this._nodes.reduce((acc, node) => acc + node.precis, '');
+        return this._parse(precis);
+    }
+
+    /**
+     * Given a precis of `_nodes` (or some subset thereof), return a MathML
+     * string representing them. Recursive. `offset` keeps track of where the
+     * subset is in `_nodes` to allow for referencing the nodes themselves.
+     *
+     * @see  LiteralUnitNode.precis()
+     * @param  {String} precis A precis of a set of nodes
+     * @param  {Number} offset The offset between start of `precis` and start of `_nodes`
+     * @return {String}        A MathML string
+     */
+    _parse(precis, offset=0) {
+        //matches last +/-. Needs to be done in reverse order: consider a-b+c
+        var match = precis.match(/[+\-](?!.*[+\-])/);
+        if(match !== null) {
+            return this._parse_operator(precis, offset, match.index);
+        }
+
+        var match = precis.match(/\*/);
+        if(match !== null) {
+            return this._parse_operator(precis, offset, match.index);
+        }
+
+        if(/^[0-9]+(\.[0-9]+)?$/.test(precis)) {
+            return '<cn>' + precis + '</cn>';
+        } else {
+            throw new Error('Cannot parse input.');
+        }
+    }
+
+    /**
+     * Having found an operator to parse, split the precis in two around it,
+     * process both sides, then return the resultant MathML string.
+     * 
+     * @param  {String} precis      A precis of a set of nodes
+     * @param  {Number} offset      The offset between start of `precis` and start of `_nodes`
+     * @param  {Number} operatorPos The position of the found operator
+     * @return {String}             A MathML string
+     */
+    _parse_operator(precis, offset, operatorPos) {
+        var op = precis[operatorPos];
+        var lhs = this._parse(
+            precis.substring(0, operatorPos),
+            offset);
+        var rhs = this._parse(
+            precis.substring(operatorPos + 1),
+            offset + operatorPos + 1);
+
+        var op_tags = {'+': '<plus/>', '-': '<minus/>', '*': '<times/>'};
+
+        return '<apply>' + op_tags[op] + lhs + rhs + '</apply>';
     }
 
     /**
@@ -312,13 +302,40 @@ class LiteralExpressionNode extends LiteralNode {
     }
 }
 
+
+/**
+ * A LiteralUnitNode is every element that isn't an ExpressionNode. Unlike
+ * ExpressionNodes which are a formless string of nodes, UnitNodes are
+ * unitary: they can be thought of as a single object whose internal structure
+ * is largely irrelevant to their parents.
+ */
+class LiteralUnitNode extends LiteralNode {
+    constructor() {
+        super();
+    }
+
+    /**
+     * Get a single character representation of a UnitNode to allow for parsing.
+     * AtomNodes return their character, LiteralExpressionNodes return nothing,
+     * everything else returns '*'.
+     *
+     * @abstract
+     * @return {String} The string to go in the value attribute
+     */
+    get precis() {
+        throw new Error('get precis() must be defined.');
+    }
+
+}
+
+
 /**
  * A LiteralExpressionStartNode is present as the first node of every
  * LiteralExpressionNode and nowhere else. Its purpose is to display the cursor
  * if it is left of every other element in the LiteralExpressionNode, and to
  * provide an anchor to click on / interact with an empty expression.
  */
-class LiteralExpressionStartNode extends LiteralNode {
+class LiteralExpressionStartNode extends LiteralUnitNode {
     /**
      * @constructs
      */
@@ -331,14 +348,15 @@ class LiteralExpressionStartNode extends LiteralNode {
 
     /**
      * @override
-     * @return {String} The string representing this element in the value attribute
+     * @return {String} The node precis
      */
-    get value() {
+    get precis() {
         return '';
     }
 }
 
-class LiteralCharacterNode extends LiteralNode {
+
+class LiteralAtomNode extends LiteralUnitNode {
     /**
      * @constructs
      */
@@ -347,16 +365,31 @@ class LiteralCharacterNode extends LiteralNode {
         this._char = char;
 
         this._element = document.createElement('span');
-        this._element.innerText = this._char;
+        this._element.innerHTML = this.displayChar;
     }
 
 
     /**
      * @override
-     * @return {String} The string representing this element in the value attribute
+     * @return {String} The node precis
      */
-    get value() {
+    get precis() {
         return this._char;
+    }
+
+
+    /**
+     * Returns the character which should be displayed in the input field.
+     * Usually the same as `_char`, but not always.
+     * 
+     * @return {String} The character to be displayed
+     */
+    get displayChar() {
+        if(this._char == '*') {
+            return '&times;';
+        } else {
+            return this._char;
+        }
     }
 }
 
