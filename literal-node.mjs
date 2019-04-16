@@ -20,6 +20,15 @@ class LiteralNode {
     /** GETTERS AND SETTERS */
 
     /**
+     * Get the parent node
+     * 
+     * @return {LiteralNode} The parent of the current node
+     */
+    get parent() {
+        return this._parent;
+    }
+
+    /**
      * Set parent node
      * 
      * @param  {LiteralNode} parent The new parent node of this element
@@ -33,6 +42,7 @@ class LiteralNode {
      * In future will be determined by output type.
      *
      * @abstract
+     * @return {String} The string to go in the value attribute
      */
     get value() {
         throw new Error('get value() must be defined.');
@@ -41,10 +51,45 @@ class LiteralNode {
     /**
      * Get the DOM node of the LiteralNode. LiteralNodes maintain their own
      * DOM elements
+     *
+     * @return {HTMLElement} The DOM element representing the node value
      */
     get element() {
         return this._element;
     }
+
+    /**
+     * Get the element to the left of the current node. This may not be a
+     * sibling - it should be whatever element a user would expect a left
+     * keypress to move the cursor to.
+     *
+     * If the cursor can't move left, return self.
+     *
+     * @abstract
+     * @return {LiteralNode} The node to the left of this node
+     */
+     get nodeLeft() {
+        if(this.parent !== null) {
+            return this.parent.childLeft(this);
+        } else {
+            return this;
+        }
+     }
+
+    /**
+     * Get the element to the right of the current node.
+     *
+     * @see  nodeLeft()
+     * @abstract
+     * @return {LiteralNode} The node to the right of this node
+     */
+     get nodeRight() {
+        if(this.parent !== null) {
+            return this.parent.childRight(this);
+        } else {
+            return this;
+        }
+     }
     
 
     /** MISCELLANEOUS FUNCTIONS */
@@ -101,6 +146,19 @@ class LiteralNode {
     }
 
     /**
+     * Insert the node `node` after `this`.
+     * 
+     * @param  {LiteralNode} node The node to be inserted
+     */
+    insertAfter(node) {
+        if(this.parent === null) {
+            throw new Error("Cursor node has no parent.")
+        }
+
+        this.parent.childInsertAfter(this, node);
+    }
+
+    /**
      * Toggle the cursor class. Used by MathInput.constuctor to flash cursor.
      * 
      * @param  {String} state (on|off|toggle) Override toggle to show/hide cursor
@@ -151,14 +209,20 @@ class LiteralExpressionNode extends LiteralNode {
 
         //every expression starts with a span, serves as the cursor location before
         //the first element
-        this.insert(new LiteralExpressionStartNode());
+        //has to be inserted manually because there is no child in a new ExpressionNode
+        //to insert it after
+        var startNode = new LiteralExpressionStartNode();
+        startNode.parent = this;
+        this._nodes.push(startNode);
+        this._element.appendChild(startNode.element);
     }
 
 
     /** GETTERS AND SETTERS */
 
     /**
-     * Get the value - the string which will go into the value attribute.
+     * @override
+     * @return {String} The string representing this element in the value attribute
      */
     get value() {
         return this._nodes.reduce((acc, node) => acc + node.value, '');
@@ -166,6 +230,8 @@ class LiteralExpressionNode extends LiteralNode {
 
     /**
      * Get the array of child nodes
+     *
+     * @return {Array} Array of child nodes
      */
     get nodes() {
         return this._nodes;
@@ -175,15 +241,74 @@ class LiteralExpressionNode extends LiteralNode {
     /** MISCELLANEOUS */
 
     /**
-     * Insert a node into this expression. Currently inserts at the end, but
-     * will ultimately be determined by cursor position
+     * Insert a node `newNode` after the node `child`
      * 
-     * @param  {LiteralNode} node The node to be inserted
+     * @param  {LiteralNode} child   The child node after which newNode is being inserted
+     * @param  {LiteralNode} newNode The node being inserted
      */
-    insert(node) {
-        node.parent = this;
-        this._nodes.push(node);
-        this._element.appendChild(node.element);
+    childInsertAfter(child, newNode) {
+        var index = this.nodes.findIndex((el) => el == child);
+
+        if(index == -1) {
+            throw new Error("Node not found.");
+        }
+
+        newNode.parent = this;
+
+        //use internal names because we're modifying
+        this._nodes.splice(index+1, 0, newNode);
+
+        var nextSibling = child.element.nextSibling;
+        if(nextSibling !== null) {
+            this._element.insertBefore(newNode.element, nextSibling);
+        } else {
+            this._element.appendChild(newNode.element);
+        }
+    }
+
+    /**
+     * If it exists, return the element left of `node` in this.nodes. If not,
+     * continue searching up the tree. Finding nothing, return `node` i.e.
+     * don't move the cursor
+     * 
+     * @param  {LiteralNode} node The node whose neighbour is being searched for
+     * @return {LiteralNode}      The node to the left of `node`
+     */
+    childLeft(node) {
+        var index = this.nodes.findIndex((el) => el == node);
+
+        if(index == -1) {
+            throw new Error("Node not found.");
+        }
+
+        if(index !== 0) {
+            return this.nodes[index - 1];
+        } else {
+            //search up the tree, when there is one
+            return node;
+        }
+    }
+
+    /**
+     * If it exists, return the element right of `node` in this.nodes. If not,
+     * continue searching up the tree. Finding nothing, return `node` i.e.
+     * don't move the cursor
+     * 
+     * @param  {LiteralNode} node The node whose neighbour is being searched for
+     * @return {LiteralNode}      The node to the right of `node`
+     */
+    childRight(node) {
+        var index = this.nodes.findIndex((el) => el == node);
+
+        if(index == -1) {
+            throw new Error("Node not found.");
+        }
+
+        if(index+1 < this.nodes.length) {
+            return this.nodes[index + 1];
+        } else {
+            return node;
+        }
     }
 }
 
@@ -205,7 +330,8 @@ class LiteralExpressionStartNode extends LiteralNode {
     }
 
     /**
-     * Get the value - the string which will go into the value attribute.
+     * @override
+     * @return {String} The string representing this element in the value attribute
      */
     get value() {
         return '';
@@ -226,7 +352,8 @@ class LiteralCharacterNode extends LiteralNode {
 
 
     /**
-     * Get the value - the string which will go into the value attribute.
+     * @override
+     * @return {String} The string representing this element in the value attribute
      */
     get value() {
         return this._char;

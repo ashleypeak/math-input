@@ -35,7 +35,7 @@ template.innerHTML = `
     </style>
     <div id='wrapper' class='wrapper'>
     </div>
-`
+`;
 
 /**
  * The MathInput is a form element which allows for the entry of mathematical
@@ -135,6 +135,12 @@ class MathInput extends HTMLElement {
             this.insert(character);
             e.preventDefault();
         }
+
+        if(character == "ArrowLeft") {
+            this.cursorNode = this.cursorNode.nodeLeft;
+        } else if(character == "ArrowRight") {
+            this.cursorNode = this.cursorNode.nodeRight;
+        }
     }
 
     /**
@@ -173,6 +179,7 @@ class MathInput extends HTMLElement {
     set cursorNode(node) {
         this._cursorNode.toggleCursor('off');
         this._cursorNode = node;
+        this._cursorNode.toggleCursor('on');
     }
 
 
@@ -185,7 +192,7 @@ class MathInput extends HTMLElement {
      */
     insert(char) {
         var node = LiteralNode.buildFromCharacter(char);
-        this.expression.insert(node);
+        this.cursorNode.insertAfter(node);
         this.cursorNode = node;
 
         this.updateValue();
