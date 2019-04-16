@@ -1,3 +1,5 @@
+import {LiteralExpressionNode, LiteralNode} from './literal-node.mjs';
+
 const tagname = 'math-input';
 const template = document.createElement('template');
 template.innerHTML = `
@@ -13,20 +15,24 @@ template.innerHTML = `
             overflow: hidden;
             cursor: text;
         }
+
+        .wrapper span {
+            display: inline-block;
+            vertical-align: middle;
+            padding: 0px 1px 0px 0px;
+            cursor: text;
+        }
+
+        .wrapper .empty-expression {
+            background-color: #d9edf7;
+            border: 1px solid #31708f;
+            width: 7px;
+            height: 20px;
+        }
     </style>
     <div id='wrapper' class='wrapper'>
     </div>
 `
-
-// `
-// <div class="mathinput" ng-class="{'mathinput-error': !output.isValid}" tabindex="0"
-//  ng-keypress="control.keypress($event)" ng-keydown="control.keydown($event)" ng-focus="control.focus()"
-//  ng-blur="control.blur()" ng-copy="control.copy()" ng-cut="control.cut()" ng-paste="control.paste($event)">
-// <adm-math-expression cursor="cursor" expression="literalTree" control="control"></adm-math-expression>
-// <input type="hidden" name="{{name}}" value="{{model}}" />
-// <input type="hidden" class="clipboard" />
-// </div>
-// `
 
 class MathInput extends HTMLElement {
     constructor() {
@@ -34,8 +40,13 @@ class MathInput extends HTMLElement {
 
         this.attachShadow({mode: 'open'});
         this.shadowRoot.appendChild(template.content.cloneNode(true));
+        this.wrapper = this.shadowRoot.getElementById('wrapper');
 
         this.addEventListener('keydown', this.keydown);
+
+        this.literal_tree = new LiteralExpressionNode(null);
+        this.expression = this.literal_tree;
+        this.render();
     }
 
     connectedCallback() {
@@ -70,14 +81,23 @@ class MathInput extends HTMLElement {
             this.insert(character);
             e.preventDefault();
         }
-
-        // scope.output.write();
     }
 
-    insert(character) {
-        var value = this.getAttribute('value') || '';
+    insert(char) {
+        var node = LiteralNode.build_from_character(char);
+        this.expression.insert(node);
+        console.log(this.expression.nodes)
 
-        this.setAttribute('value', value + character);
+        this.render();
+    }
+
+    render() {
+        this.setAttribute('value', this.literal_tree.value);
+
+        while(this.wrapper.firstChild) {
+            this.wrapper.removeChild(this.wrapper.firstChild);
+        }
+        this.wrapper.appendChild(this.literal_tree.html);
     }
 }
 
