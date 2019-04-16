@@ -1,6 +1,7 @@
 import {LiteralExpressionNode, LiteralNode} from './literal-node.mjs';
 
 const tagname = 'math-input';
+const cursorSpeed = 530;
 const template = document.createElement('template');
 template.innerHTML = `
     <style type='text/css'>
@@ -21,13 +22,23 @@ template.innerHTML = `
             vertical-align: middle;
             padding: 0px 1px 0px 0px;
             cursor: text;
+            min-width: 7px;
+            min-height: 20px;
+        }
+
+        .wrapper span.cursor {
+            padding-right: 0px;
+            border-right: 1px solid;
         }
 
         .wrapper .empty-expression {
             background-color: #d9edf7;
             border: 1px solid #31708f;
-            width: 7px;
-            height: 20px;
+        }
+
+        .mathinput .empty-expression.cursor-inside {
+            background-color: #dff0d8;
+            border: 1px solid #3c763d;
         }
     </style>
     <div id='wrapper' class='wrapper'>
@@ -42,11 +53,22 @@ class MathInput extends HTMLElement {
         this.shadowRoot.appendChild(template.content.cloneNode(true));
         this.wrapper = this.shadowRoot.getElementById('wrapper');
 
-        this.addEventListener('keydown', this.keydown);
+        this.literalTree = new LiteralExpressionNode(null);
+        this.expression = this.literalTree;
+        this._cursorNode = this.expression.nodes[0];
 
-        this.literal_tree = new LiteralExpressionNode(null);
-        this.expression = this.literal_tree;
         this.render();
+
+        var self = this;
+        setInterval(function() {
+            if(self._focused) {
+                self.cursorNode.toggleCursor();
+            }
+        }, cursorSpeed);
+
+        this.addEventListener('keydown', this.keydown);
+        this.addEventListener('focus', this.focus);
+        this.addEventListener('blur', this.blur);
     }
 
     connectedCallback() {
@@ -58,11 +80,11 @@ class MathInput extends HTMLElement {
         input.setAttribute('class', 'real-input');
         this.appendChild(input);
 
-        this.connected = true;
+        this._connected = true;
     }
 
     attributeChangedCallback(name, old, value) {
-        if(this.connected) {
+        if(this._connected) {
             this.shadowRoot.getElementById('wrapper').innerHTML = value;
             this.getElementsByClassName('real-input')[0].value = value;
         }
@@ -83,21 +105,40 @@ class MathInput extends HTMLElement {
         }
     }
 
+    focus() {
+        this._focused = true;
+        this.cursorNode.toggleCursor('on');
+    }
+
+    blur() {
+        this._focused = false;
+        this.cursorNode.toggleCursor('off');
+    }
+
+    get cursorNode() {
+        return this._cursorNode;
+    }
+
+    set cursorNode(node) {
+        this._cursorNode.toggleCursor('off');
+        this._cursorNode = node;
+    }
+
     insert(char) {
-        var node = LiteralNode.build_from_character(char);
+        var node = LiteralNode.buildFromCharacter(char);
         this.expression.insert(node);
-        console.log(this.expression.nodes)
+        this.cursorNode = node;
 
         this.render();
     }
 
     render() {
-        this.setAttribute('value', this.literal_tree.value);
+        this.setAttribute('value', this.literalTree.value);
 
         while(this.wrapper.firstChild) {
             this.wrapper.removeChild(this.wrapper.firstChild);
         }
-        this.wrapper.appendChild(this.literal_tree.html);
+        this.wrapper.appendChild(this.literalTree.element);
     }
 }
 
