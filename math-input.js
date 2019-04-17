@@ -150,7 +150,6 @@ class MathInput extends HTMLElement {
      * @param  {Event} e JavaScript Event object
      */
     keydown(e) {
-        console.log('running')
         if(e.ctrlKey)   //don't capture control combinations
             return;
 
@@ -248,7 +247,6 @@ class MathInput extends HTMLElement {
         var node = MathNode.buildFromCharacter(char);
         this.cursorNode.insertAfter(node);
         this.cursorNode = node;
-        console.log(node);
 
         this.updateValue();
 
@@ -261,11 +259,12 @@ class MathInput extends HTMLElement {
     updateValue() {
         try {
             this.wrapper.classList.remove('error');
-
             this.setAttribute('value', this.rootNode.value);
         } catch(error) {
             console.error(error);
+
             this.wrapper.classList.add('error');
+            this.setAttribute('value', '');
         }
     }
 }

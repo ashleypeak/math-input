@@ -226,6 +226,8 @@ class ExpressionNode extends MathNode {
      * @return {String}        A MathML string
      */
     _parse(precis, offset=1) {
+        //TODO mask brackets/absolute
+
         //matches last +/-. Needs to be done in reverse order: consider a-b+c
         var match = precis.match(/[+\-](?!.*[+\-])/);
         if(match !== null) {
@@ -238,26 +240,56 @@ class ExpressionNode extends MathNode {
             return this._parseOperator(precis, offset, match.index);
         }
 
-        //match an initial number/character with more to follow
-        var match = precis.match(/^([0-9]+(.[0-9]+)?(?=[^.0-9])|[a-zA-Z](?=.+))/);
-        if(match !== null) {
-            return this._parseImplicitTimes(precis, offset, match[0].length);
+        //if it starts with a number
+        if(/^[0-9]/.test(precis)) {
+            var term = precis.match(/^[0-9]+(\.[0-9]+)?/)[0];
+            var mathml = '<cn>' + term + '</cn>';
+
+            return this._termOrImplicitTimes(term, mathml, precis, offset)
         }
 
-        //match a number and nothing else
-        var match = precis.match(/^[0-9]+(.[0-9]+)?$/);
-        if(match !== null) {
-            return '<cn>' + precis + '</cn>';
+        //if it starts with a letter
+        if(/^[a-zA-Z]/.test(precis)) {
+            //TODO add support for multicharacter terms like `sin`
+            var term = precis[0];
+            var mathml = '<ci>' + term + '</ci>';
+
+            return this._termOrImplicitTimes(term, mathml, precis, offset)
         }
 
-        //match a letter and nothing else
-        var match = precis.match(/^[a-zA-Z]$/);
-        if(match !== null) {
-            return '<ci>' + precis + '</ci>';
+        //if it starts with a % i.e. is a non-Atom UnitNode
+        if(/^%/.test(precis)) {
+            var term = precis[0];
+            var mathml = this.nodes[offset].value;
+
+            return this._termOrImplicitTimes(term, mathml, precis, offset)
         }
 
         //if no match has been found
         throw new Error('Cannot parse input.');
+    }
+
+    /**
+     * Utility function to save repitition. Given a `term`, a matched section
+     * at the start of a precis:
+     *  - if it comprises the entire precis, return it's calculated `mathml`
+     *  - otherwise, parse the rest and multiply them together
+     *  
+     * @param  {String} term   The portion of the precis identified as a term
+     * @param  {String} mathml The mathml rendering of `term`
+     * @param  {String} precis The full precis being parsed
+     * @param  {Number} offset The precis' offset within the expression
+     * @return {String}        The resultant mathml term
+     */
+    _termOrImplicitTimes(term, mathml, precis, offset) {
+        if(term.length == precis.length) {
+            return mathml;
+        } else {
+            var newOffset = offset + term.length;
+            var rest = this._parse(precis.substring(term.length), newOffset);
+
+            return '<apply><times/>' + mathml + rest + '</apply>';
+        }
     }
 
     /**
@@ -281,22 +313,6 @@ class ExpressionNode extends MathNode {
         var op_tags = {'+': '<plus/>', '-': '<minus/>', '*': '<times/>'};
 
         return '<apply>' + op_tags[op] + lhs + rhs + '</apply>';
-    }
-
-    /**
-     * Having found an implicit times, split precis in two, parse both sides,
-     * combine with a times operator.
-     * 
-     * @param  {String} precis A precis of a set of nodes
-     * @param  {Number} offset The offset between `precis` and `_nodes`
-     * @param  {Number} split  The position of the implicit times
-     * @return {String}        A MathML string
-     */
-    _parseImplicitTimes(precis, offset, split) {
-        var lhs = this._parse(precis.substring(0, split), offset);
-        var rhs = this._parse(precis.substring(split), offset + split);
-
-        return '<apply><times/>' + lhs + rhs + '</apply>';
     }
 
     /**
@@ -437,7 +453,8 @@ class UnitNode extends MathNode {
     /**
      * Get a single character representation of a UnitNode to allow for parsing.
      * AtomNodes return their character, ExpressionNodes return nothing,
-     * everything else returns '*'.
+     * everything else returns '%', indicating that it will provide its own
+     * value using UnitNode.value
      *
      * @abstract
      * @return {String} The string to go in the value attribute
@@ -669,7 +686,7 @@ class DivisionNode extends UnitNode {
      * @return {String} The node precis
      */
     get precis() {
-        return '*';
+        return '%';
     }
 
     /**
@@ -696,6 +713,10 @@ class DivisionNode extends UnitNode {
      */
     get cursorNodeFromLeft() {
         return this.numerator.startNode;
+    }
+
+    get value() {
+        return '<apply><divide/>' + this.numerator.value + this.denominator.value + '</apply>';
     }
 
     /**
