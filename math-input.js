@@ -175,11 +175,21 @@ class MathInput extends HTMLElement {
             this.cursorNode = this.cursorNode.nodeRight();
         }
 
-        if(character == 'Backspace') {
-            var oldCursor = this.cursorNode;
-            this.cursorNode = this.cursorNode.nodeLeft();
+        if(character == 'ArrowUp') {
+            this.cursorNode = this.cursorNode.nodeUp();
+        }
 
-            if(this.cursorNode != oldCursor) {
+        if(character == 'ArrowDown') {
+            this.cursorNode = this.cursorNode.nodeDown();
+        }
+
+        if(character == 'Backspace') {
+            var newCursor = this.cursorNode.previousSibling;
+
+            if(newCursor !== null) {
+                var oldCursor = this.cursorNode;
+                this.cursorNode = newCursor;
+
                 oldCursor.delete();
                 this.updateValue();
             }

@@ -66,17 +66,33 @@ class MathNode {
      }
 
      /**
-      * Get the node right of `node`, either among this node's children or else
-      * by scanning further up the node tree. Specific behaviour depends on
-      * node type.
+      * Get the node right of `node`
       *
+      * @see  childLeft
       * @abstract
-      * @param  {MathNode} node        The node whose right neighbor we want
-      * @param  {MathNode} defaultNode The node which originally called nodeRight
-      * @return {MathNode}             The node to the right
       */
      childRight(node, defaultNode) {
-        throw new Error("You must define childLeft().")
+        throw new Error("You must define childRight().")
+     }
+
+     /**
+      * Get the node above `node`
+      *
+      * @see  childLeft
+      * @abstract
+      */
+     childUp(node, defaultNode) {
+        throw new Error("You must define childUp().")
+     }
+
+     /**
+      * Get the node below `node`
+      *
+      * @see  childLeft
+      * @abstract
+      */
+     childDown(node, defaultNode) {
+        throw new Error("You must define childDown().")
      }
 
     /**
@@ -339,9 +355,6 @@ class ExpressionNode extends MathNode {
      * Return the child right of `node`.
      *
      * @see  childLeft
-     * @param  {MathNode} node The node whose neighbour is being searched for
-     * @param  {MathNode} defaultNode The node returned if nothing else is
-     * @return {MathNode}      The node to the right of `node`
      */
     childRight(node, defaultNode) {
         var index = this.nodes.findIndex((el) => el == node);
@@ -354,6 +367,34 @@ class ExpressionNode extends MathNode {
             return this.nodes[index + 1].cursorNodeFromLeft;
         } else if(this.parent !== null) {
             return this.parent.childRight(this, defaultNode);
+        } else {
+            return defaultNode;
+        }
+    }
+
+    /**
+     * Return the child above `node`. All nodes within an expression are the
+     * same height, so pass it up to parent.
+     *
+     * @see  childLeft
+     */
+    childUp(node, defaultNode) {
+        if(this.parent !== null) {
+            return this.parent.childUp(this, defaultNode);
+        } else {
+            return defaultNode;
+        }
+    }
+
+    /**
+     * Return the child below `node`. All nodes within an expression are the
+     * same height, so pass it up to parent.
+     *
+     * @see  childLeft
+     */
+    childDown(node, defaultNode) {
+        if(this.parent !== null) {
+            return this.parent.childDown(this, defaultNode);
         } else {
             return defaultNode;
         }
@@ -427,6 +468,49 @@ class UnitNode extends MathNode {
         return this;
     }
 
+    /**
+     * If the cursor is entering this node from the above, where should it go?
+     * Default to returning the node itself, but if node has substructure may
+     * want something else.
+     * 
+     * @return {MathNode} The new cursor node
+     */
+    get cursorNodeFromAbove() {
+        return this;
+    }
+
+    /**
+     * If the cursor is entering this node from the below, where should it go?
+     * Default to returning the node itself, but if node has substructure may
+     * want something else.
+     * 
+     * @return {MathNode} The new cursor node
+     */
+    get cursorNodeFromBelow() {
+        return this;
+    }
+
+    /**
+     * Get the previous element in the parent Expression. Unlike nodeLeft, this
+     * will not return a node outside the expression.
+     * Returns null if `this` is first node.
+     * 
+     * @return {MathNode} The previous node
+     */
+    get previousSibling() {
+        var index = this.parent.nodes.findIndex((el) => el == this);
+
+        if(index == -1) {
+            throw new Error("Node not found.");
+        }
+
+        if(index == 0) {
+            return null;
+        }
+
+        return this.parent.nodes[index - 1];
+    }
+
 
     /** MISCELLANEOUS FUNCTIONS */
 
@@ -460,6 +544,32 @@ class UnitNode extends MathNode {
             defaultNode = this;
         
         return this.parent.childRight(this, defaultNode);
+     }
+
+    /**
+     * Get the element above the current node.
+     *
+     * @see  nodeLeft()
+     * @return {MathNode} The node above this node
+     */
+     nodeUp(defaultNode) {
+        if(typeof defaultNode == 'undefined')
+            defaultNode = this;
+
+        return this.parent.childUp(this, defaultNode);
+     }
+
+    /**
+     * Get the element below the current node.
+     *
+     * @see  nodeLeft()
+     * @return {MathNode} The node below this node
+     */
+     nodeDown(defaultNode) {
+        if(typeof defaultNode == 'undefined')
+            defaultNode = this;
+
+        return this.parent.childDown(this, defaultNode);
      }
 
     /**
@@ -594,6 +704,7 @@ class DivisionNode extends UnitNode {
      * sibling node to the left.
      *
      * @override
+     * @return {MathNode} The new cursor node
      */
      nodeLeft(defaultNode) {
         return this.numerator.endNode;
@@ -604,6 +715,7 @@ class DivisionNode extends UnitNode {
      * left. In both cases, return the node left of DivisionNode in parent.
      *
      * @override
+     * @return {MathNode} The new cursor node
      */
     childLeft(node, defaultNode) {
         return this.parent.childLeft(this, defaultNode);
@@ -614,9 +726,38 @@ class DivisionNode extends UnitNode {
      * right. In both cases, return the DivisionNode itself.
      *
      * @override
+     * @return {MathNode} The new cursor node
      */
-    childRight(node, defaultnOde) {
+    childRight(node, defaultNode) {
         return this;
+    }
+
+    /**
+     * From denominator, provide numerator. Otherwise pass it up the chain.
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    childUp(node, defaultNode) {
+        if(node == this.denominator) {
+            return this.numerator.startNode.cursorNodeFromBelow;
+        } else {
+            return this.parent.childUp(this, defaultNode);
+        }
+    }
+
+    /**
+     * From numerator, provide denominator. Otherwise pass it up the chain.
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    childDown(node, defaultNode) {
+        if(node == this.numerator) {
+            return this.denominator.startNode.cursorNodeFromAbove;
+        } else {
+            return this.parent.childDown(this, defaultNode);
+        }
     }
 }
 
