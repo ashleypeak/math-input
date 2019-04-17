@@ -1,4 +1,4 @@
-import {ExpressionNode, MathNode} from './math-node.mjs';
+import {ExpressionNode, MathNode} from './math-node.js';
 
 const tagname = 'math-input';
 const cursorSpeed = 530;
@@ -150,6 +150,7 @@ class MathInput extends HTMLElement {
      * @param  {Event} e JavaScript Event object
      */
     keydown(e) {
+        console.log('running')
         if(e.ctrlKey)   //don't capture control combinations
             return;
 
