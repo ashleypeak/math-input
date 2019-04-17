@@ -162,7 +162,13 @@ class MathInput extends HTMLElement {
         if(character == '/') {
             e.preventDefault();
             var node = this.insert(character);
-            this.cursorNode = node.numerator.startNode;
+
+            var collected = node.collectNumerator();
+            if(collected) {
+                this.cursorNode = node.denominator.startNode;
+            } else {
+                this.cursorNode = node.numerator.endNode;
+            }
         }
 
 

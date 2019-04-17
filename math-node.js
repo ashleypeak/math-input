@@ -105,6 +105,11 @@ class MathNode {
             throw new Error("Cursor node has no parent.")
         }
 
+        //if the node has a parent, unlink it from its parent node
+        if(node.parent !== null) {
+            node.delete();
+        }
+
         this.parent.childInsertAfter(this, node);
     }
 
@@ -131,7 +136,7 @@ class MathNode {
         if(/^[a-zA-Z0-9.+\-*]$/.test(char)) {
             return new AtomNode(char);
         } else if(/^\/$/.test(char)) {
-            return new DivisionNode(char);
+            return new DivisionNode();
         } else {
             throw new Error('Not yet implemented: ' + char);
         }
@@ -717,6 +722,38 @@ class DivisionNode extends UnitNode {
 
     get value() {
         return '<apply><divide/>' + this.numerator.value + this.denominator.value + '</apply>';
+    }
+
+    /**
+     * When creating a DivisionNode, should any previously typed elements be
+     * moved into the numerator? The decision is largely arbitrary, just trying
+     * to match expected behaviour i.e. if I type '1/2' I expect to get a
+     * fraction of one on two.
+     *
+     * Returns true if elements are collected, false otherwise. Used to
+     * determine where to put the cursor.
+     * 
+     * @return {Boolean} Were any elements added to numerator?
+     */
+    collectNumerator() {
+        var precis = '';
+        var node = this.previousSibling;
+        do {
+            precis = node.precis + precis;
+        } while(node = node.previousSibling)
+
+        //match everything that should move to numerator, fairly arbitrary
+        //TODO when I intoduce brackets, they need to be taken into account
+        var match = precis.match(/[a-zA-Z0-9]+$/);
+        if(match !== null) {
+            for(var i = 0; i < match[0].length; i++) {
+                this.numerator.startNode.insertAfter(this.previousSibling);
+            }
+
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
