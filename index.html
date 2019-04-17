@@ -1,16 +1,22 @@
-<!DOCTYPE HTML>
+<!doctype html>
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
         <title>Math input</title>
         <script type="module" src="math-input.mjs"></script>
+        <script type="text/javascript">
+            window.setInterval(function() {
+                document.getElementById('nodeval').innerText = document.getElementById('math1').getAttribute('value');
+            }, 100);
+        </script>
     </head>
     <body>
         <form method="get">
             <input type="text" name="math0" tabindex="1" />
-            <math-input name="math1" tabindex="2"></math-input>
+            <math-input name="math1" id="math1" tabindex="2"></math-input>
             <math-input name="math2" tabindex="3"></math-input>
             <input type="submit" />
         </form>
+        <p>NodeValue: <span id='nodeval'></span></p>
     </body>
 </html>

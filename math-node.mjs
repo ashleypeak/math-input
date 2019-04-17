@@ -12,8 +12,9 @@ class MathNode {
     /**
      * @constructs
      */
-    constructor() {
-        this._parent = null;
+    constructor(parent=null) {
+        this._parent = parent;
+        this._element = null;
     }
 
 
@@ -46,40 +47,37 @@ class MathNode {
     get element() {
         return this._element;
     }
-
-    /**
-     * Get the element to the left of the current node. This may not be a
-     * sibling - it should be whatever element a user would expect a left
-     * keypress to move the cursor to.
-     *
-     * If the cursor can't move left, return self.
-     *
-     * @return {MathNode} The node to the left of this node
-     */
-     get nodeLeft() {
-        if(this.parent !== null) {
-            return this.parent.childLeft(this);
-        } else {
-            return this;
-        }
-     }
-
-    /**
-     * Get the element to the right of the current node.
-     *
-     * @see  nodeLeft()
-     * @return {MathNode} The node to the right of this node
-     */
-     get nodeRight() {
-        if(this.parent !== null) {
-            return this.parent.childRight(this);
-        } else {
-            return this;
-        }
-     }
     
 
     /** MISCELLANEOUS FUNCTIONS */
+
+     /**
+      * Get the node left of `node`, either among this node's children or else
+      * by scanning further up the node tree. Specific behaviour depends on
+      * node type.
+      *
+      * @abstract
+      * @param  {MathNode} node        The node whose left neighbor we want
+      * @param  {MathNode} defaultNode The node which originally called nodeLeft
+      * @return {MathNode}             The node to the left
+      */
+     childLeft(node, defaultNode) {
+        throw new Error("You must define childLeft().")
+     }
+
+     /**
+      * Get the node right of `node`, either among this node's children or else
+      * by scanning further up the node tree. Specific behaviour depends on
+      * node type.
+      *
+      * @abstract
+      * @param  {MathNode} node        The node whose right neighbor we want
+      * @param  {MathNode} defaultNode The node which originally called nodeRight
+      * @return {MathNode}             The node to the right
+      */
+     childRight(node, defaultNode) {
+        throw new Error("You must define childLeft().")
+     }
 
     /**
      * Insert the node `node` after `this`.
@@ -116,6 +114,8 @@ class MathNode {
     static buildFromCharacter(char) {
         if(/^[a-zA-Z0-9.+\-*]$/.test(char)) {
             return new AtomNode(char);
+        } else if(/^\/$/.test(char)) {
+            return new DivisionNode(char);
         } else {
             throw new Error('Not yet implemented: ' + char);
         }
@@ -136,8 +136,8 @@ class ExpressionNode extends MathNode {
     /**
      * @constructs
      */
-    constructor() {
-        super();
+    constructor(parent=null) {
+        super(parent);
 
         this._nodes = new Array();
         this._element = document.createElement('span');
@@ -167,6 +167,36 @@ class ExpressionNode extends MathNode {
     }
 
     /**
+     * Get the array of child nodes
+     *
+     * @return {Array} Array of child nodes
+     */
+    get nodes() {
+        return this._nodes;
+    }
+
+    /**
+     * Get the StartNode - the first node of the expression
+     * 
+     * @return {MathNode} The StartNode, first of the child nodes
+     */
+    get startNode() {
+        return this.nodes[0];
+    }
+
+    /**
+     * Get the last (rightmost) node amonst expression's children.
+     * 
+     * @return {MathNode} The rightmost node in `this.nodes`
+     */
+    get endNode() {
+        return this.nodes[this.nodes.length - 1];
+    }
+
+
+    /** MISCELLANEOUS */
+
+    /**
      * Given a precis of `_nodes` (or some subset thereof), return a MathML
      * string representing them. Recursive. `offset` keeps track of where the
      * subset is in `_nodes` to allow for referencing the nodes themselves.
@@ -180,8 +210,6 @@ class ExpressionNode extends MathNode {
      * @return {String}        A MathML string
      */
     _parse(precis, offset=1) {
-        console.log(precis);
-        console.log(this.nodes[offset]);
         //matches last +/-. Needs to be done in reverse order: consider a-b+c
         var match = precis.match(/[+\-](?!.*[+\-])/);
         if(match !== null) {
@@ -256,18 +284,6 @@ class ExpressionNode extends MathNode {
     }
 
     /**
-     * Get the array of child nodes
-     *
-     * @return {Array} Array of child nodes
-     */
-    get nodes() {
-        return this._nodes;
-    }
-
-
-    /** MISCELLANEOUS */
-
-    /**
      * Insert a node `newNode` after the node `child`
      * 
      * @param  {MathNode} child   The child node after which newNode is being inserted
@@ -295,13 +311,15 @@ class ExpressionNode extends MathNode {
 
     /**
      * If it exists, return the element left of `node` in this.nodes. If not,
-     * continue searching up the tree. Finding nothing, return `node` i.e.
-     * don't move the cursor
+     * continue searching up the tree. Finding nothing, return `defaultNode`,
+     * which was the original node on which moveLeft() was called i.e. don't
+     * move the cursor.
      * 
      * @param  {MathNode} node The node whose neighbour is being searched for
+     * @param  {MathNode} defaultNode The node returned if nothing else is
      * @return {MathNode}      The node to the left of `node`
      */
-    childLeft(node) {
+    childLeft(node, defaultNode) {
         var index = this.nodes.findIndex((el) => el == node);
 
         if(index == -1) {
@@ -309,22 +327,23 @@ class ExpressionNode extends MathNode {
         }
 
         if(index !== 0) {
-            return this.nodes[index - 1];
+            return this.nodes[index - 1].cursorNodeFromRight;
+        } else if(this.parent !== null) {
+            return this.parent.childLeft(this, defaultNode);
         } else {
-            //search up the tree, when there is one
-            return node;
+            return defaultNode;
         }
     }
 
     /**
-     * If it exists, return the element right of `node` in this.nodes. If not,
-     * continue searching up the tree. Finding nothing, return `node` i.e.
-     * don't move the cursor
-     * 
+     * Return the child right of `node`.
+     *
+     * @see  childLeft
      * @param  {MathNode} node The node whose neighbour is being searched for
+     * @param  {MathNode} defaultNode The node returned if nothing else is
      * @return {MathNode}      The node to the right of `node`
      */
-    childRight(node) {
+    childRight(node, defaultNode) {
         var index = this.nodes.findIndex((el) => el == node);
 
         if(index == -1) {
@@ -332,9 +351,11 @@ class ExpressionNode extends MathNode {
         }
 
         if(index+1 < this.nodes.length) {
-            return this.nodes[index + 1];
+            return this.nodes[index + 1].cursorNodeFromLeft;
+        } else if(this.parent !== null) {
+            return this.parent.childRight(this, defaultNode);
         } else {
-            return node;
+            return defaultNode;
         }
     }
 
@@ -368,8 +389,8 @@ class UnitNode extends MathNode {
     /**
      * @constructs
      */
-    constructor() {
-        super();
+    constructor(parent=null) {
+        super(parent);
     }
 
     /**
@@ -383,6 +404,63 @@ class UnitNode extends MathNode {
     get precis() {
         throw new Error('get precis() must be defined.');
     }
+
+    /**
+     * If the cursor is entering this node from the left, where should it go?
+     * Default to returning the node itself, but if node has substructure may
+     * want something else.
+     * 
+     * @return {MathNode} The new cursor node
+     */
+    get cursorNodeFromLeft() {
+        return this;
+    }
+
+    /**
+     * If the cursor is entering this node from the right, where should it go?
+     * Default to returning the node itself, but if node has substructure may
+     * want something else.
+     * 
+     * @return {MathNode} The new cursor node
+     */
+    get cursorNodeFromRight() {
+        return this;
+    }
+
+
+    /** MISCELLANEOUS FUNCTIONS */
+
+    /**
+     * Get the element to the left of the current node. This may not be a
+     * sibling - it should be whatever element a user would expect a left
+     * keypress to move the cursor to.
+     *
+     * If the cursor can't move left, return defaultNode. Since childLeft
+     * bubbles up through the element tree, need to keep track of which node
+     * nodeLeft was originall called on.
+     *
+     * @param {MathNode} defaultNode The node to return if no left node
+     * @return {MathNode} The node to the left of this node
+     */
+     nodeLeft(defaultNode) {
+        if(typeof defaultNode == 'undefined')
+            defaultNode = this;
+
+        return this.parent.childLeft(this, defaultNode);
+     }
+
+    /**
+     * Get the element to the right of the current node.
+     *
+     * @see  nodeLeft()
+     * @return {MathNode} The node to the right of this node
+     */
+     nodeRight(defaultNode) {
+        if(typeof defaultNode == 'undefined')
+            defaultNode = this;
+        
+        return this.parent.childRight(this, defaultNode);
+     }
 
     /**
      * Delete this node
@@ -403,8 +481,8 @@ class StartNode extends UnitNode {
     /**
      * @constructs
      */
-    constructor() {
-        super();
+    constructor(parent=null) {
+        super(parent);
 
         this._element = document.createElement('span');
         this._element.className = 'empty';
@@ -424,14 +502,13 @@ class AtomNode extends UnitNode {
     /**
      * @constructs
      */
-    constructor(char) {
-        super();
+    constructor(char, parent=null) {
+        super(parent);
         this._char = char;
 
         this._element = document.createElement('span');
         this._element.innerHTML = this.displayChar;
     }
-
 
     /**
      * @override
@@ -440,7 +517,6 @@ class AtomNode extends UnitNode {
     get precis() {
         return this._char;
     }
-
 
     /**
      * Returns the character which should be displayed in the input field.
@@ -454,6 +530,93 @@ class AtomNode extends UnitNode {
         } else {
             return this._char;
         }
+    }
+}
+
+
+class DivisionNode extends UnitNode {
+    /**
+     * @constructs
+     */
+    constructor(parent=null) {
+        super(parent);
+
+        this._element = document.createElement('span');
+        this._element.classList.add('division');
+
+        this._numerator = new ExpressionNode(this);
+        this._numerator.element.classList.add('numerator');
+
+        this._denominator = new ExpressionNode(this);
+        this._denominator.element.classList.add('denominator');
+
+        this._element.appendChild(this._numerator.element);
+        this._element.appendChild(this._denominator.element);
+    }
+
+    /**
+     * @override
+     * @return {String} The node precis
+     */
+    get precis() {
+        return '*';
+    }
+
+    /**
+     * Get numerator
+     * @return {MathNode} Numerator
+     */
+    get numerator() {
+        return this._numerator;
+    }
+
+    /**
+     * Get denominator
+     * @return {MathNode} Denominator
+     */
+    get denominator() {
+        return this._denominator;
+    }
+
+    /**
+     * If the cursor's coming in from the left, where should it go?
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    get cursorNodeFromLeft() {
+        return this.numerator.startNode;
+    }
+
+    /**
+     * When moving left from a DivisionNode (i.e. cursor is right of the
+     * division), move into the end of the numerator rather than to the
+     * sibling node to the left.
+     *
+     * @override
+     */
+     nodeLeft(defaultNode) {
+        return this.numerator.endNode;
+     }
+
+    /**
+     * Called from either the numerator or denominator, return node to the
+     * left. In both cases, return the node left of DivisionNode in parent.
+     *
+     * @override
+     */
+    childLeft(node, defaultNode) {
+        return this.parent.childLeft(this, defaultNode);
+    }
+
+    /**
+     * Called from either the numerator or denominator, return node to the
+     * right. In both cases, return the DivisionNode itself.
+     *
+     * @override
+     */
+    childRight(node, defaultnOde) {
+        return this;
     }
 }
 

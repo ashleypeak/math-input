@@ -37,6 +37,24 @@ template.innerHTML = `
             padding-right: 0px;
             border-right: 1px solid;
         }
+
+        .wrapper .division, .mathinput .numerator, .mathinput .denominator {
+            padding: 0px 5px;    
+        }
+
+        .wrapper .division {
+            text-align: center;
+            vertical-align: -20px;
+        }
+
+        .wrapper .division.cursor {
+            padding: 0px 4px 0px 5px;
+        }
+
+        .wrapper .denominator {
+            border-top: 1px solid;
+            display: block;
+        }
     </style>
     <div id='wrapper' class='wrapper'>
     </div>
@@ -62,7 +80,7 @@ class MathInput extends HTMLElement {
 
         this.rootNode = new ExpressionNode(null);
         this.expression = this.rootNode;
-        this._cursorNode = this.expression.nodes[0];
+        this._cursorNode = this.expression.startNode;
 
         // this.render();
         this.wrapper.appendChild(this.rootNode.element);
@@ -137,17 +155,28 @@ class MathInput extends HTMLElement {
 
         var character = e.key || e.keyCode;
         if(/^[a-zA-Z0-9.+\-*()\^|,='<>~]$/.test(character)) {
-            this.insert(character);
             e.preventDefault();
+            this.insert(character);
         }
 
+        if(character == '/') {
+            e.preventDefault();
+            var node = this.insert(character);
+            this.cursorNode = node.numerator.startNode;
+        }
+
+
         if(character == 'ArrowLeft') {
-            this.cursorNode = this.cursorNode.nodeLeft;
-        } else if(character == 'ArrowRight') {
-            this.cursorNode = this.cursorNode.nodeRight;
-        } else if(character == 'Backspace') {
+            this.cursorNode = this.cursorNode.nodeLeft();
+        }
+
+        if(character == 'ArrowRight') {
+            this.cursorNode = this.cursorNode.nodeRight();
+        }
+
+        if(character == 'Backspace') {
             var oldCursor = this.cursorNode;
-            this.cursorNode = this.cursorNode.nodeLeft;
+            this.cursorNode = this.cursorNode.nodeLeft();
 
             if(this.cursorNode != oldCursor) {
                 oldCursor.delete();
@@ -202,13 +231,17 @@ class MathInput extends HTMLElement {
      * Insert a character at the cursor position.
      * 
      * @param  {string} char The character to insert as a new node
+     * @return {MathNode} The created node
      */
     insert(char) {
         var node = MathNode.buildFromCharacter(char);
         this.cursorNode.insertAfter(node);
         this.cursorNode = node;
+        console.log(node);
 
         this.updateValue();
+
+        return node;
     }
 
     /**
@@ -219,7 +252,6 @@ class MathInput extends HTMLElement {
             this.wrapper.classList.remove('error');
 
             this.setAttribute('value', this.rootNode.value);
-            console.log(this.rootNode.value);
         } catch(error) {
             console.error(error);
             this.wrapper.classList.add('error');
