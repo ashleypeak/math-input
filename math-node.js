@@ -133,7 +133,7 @@ class MathNode {
      * @return {MathNode} The resultant MathNode
      */
     static buildFromCharacter(char) {
-        if(/^[a-zA-Z0-9.+\-*]$/.test(char)) {
+        if(/^[a-zA-Z0-9.+\-*()]$/.test(char)) {
             return new AtomNode(char);
         } else if(/^\/$/.test(char)) {
             return new DivisionNode();
@@ -231,15 +231,20 @@ class ExpressionNode extends MathNode {
      */
     _parse(precis, offset=1) {
         //TODO mask brackets/absolute
+        try {
+            var masked = this._mask(precis);
+        } catch(error) {
+            throw error;
+        }
 
         //matches last +/-. Needs to be done in reverse order: consider a-b+c
-        var match = precis.match(/[+\-](?!.*[+\-])/);
+        var match = masked.match(/[+\-](?!.*[+\-])/);
         if(match !== null) {
             return this._parseOperator(precis, offset, match.index);
         }
 
         //match a times symbol
-        var match = precis.match(/\*/);
+        var match = masked.match(/\*/);
         if(match !== null) {
             return this._parseOperator(precis, offset, match.index);
         }
@@ -249,7 +254,7 @@ class ExpressionNode extends MathNode {
             var term = precis.match(/^[0-9]+(\.[0-9]+)?/)[0];
             var mathml = '<cn>' + term + '</cn>';
 
-            return this._termOrImplicitTimes(term, mathml, precis, offset)
+            return this._termOrImplicitTimes(term, mathml, precis, offset);
         }
 
         //if it starts with a letter
@@ -258,7 +263,7 @@ class ExpressionNode extends MathNode {
             var term = precis[0];
             var mathml = '<ci>' + term + '</ci>';
 
-            return this._termOrImplicitTimes(term, mathml, precis, offset)
+            return this._termOrImplicitTimes(term, mathml, precis, offset);
         }
 
         //if it starts with a % i.e. is a non-Atom UnitNode
@@ -266,11 +271,50 @@ class ExpressionNode extends MathNode {
             var term = precis[0];
             var mathml = this.nodes[offset].value;
 
-            return this._termOrImplicitTimes(term, mathml, precis, offset)
+            return this._termOrImplicitTimes(term, mathml, precis, offset);
+        }
+
+        //if it starts with a parenthesis
+        if(/^\(/.test(precis)) {
+            //can't find end using `masked` because (1)(2) would return 5 not 2
+            var end = this._findMatchingParen(precis, 0);
+            var term = precis.slice(0, end + 1);
+            var mathml = this._parse(term.slice(1, -1), offset + 1);
+
+            return this._termOrImplicitTimes(term, mathml, precis, offset);
         }
 
         //if no match has been found
         throw new Error('Cannot parse input.');
+    }
+
+    _mask(precis) {
+        var masked = precis;
+        var start = -1;
+        while((start = masked.indexOf('(')) != -1) {
+            var end = this._findMatchingParen(masked, start);
+            var len = end - start + 1;
+
+            masked = masked.substr(0, start) + '#'.repeat(len) + masked.substr(end + 1);
+        }
+
+        return masked;
+    }
+
+    _findMatchingParen(precis, start) {
+        var depth = 1;
+        for(var i = start + 1; i < precis.length; i++) {
+            if(precis[i] == ')') {
+                depth--;
+                if(depth == 0) {
+                    return i;
+                }
+            } else if(precis[i] == '(') {
+                depth++;
+            }
+        }
+
+        throw new Error('Unmatched parenthesis');
     }
 
     /**
@@ -290,7 +334,7 @@ class ExpressionNode extends MathNode {
             return mathml;
         } else {
             var newOffset = offset + term.length;
-            var rest = this._parse(precis.substring(term.length), newOffset);
+            var rest = this._parse(precis.slice(term.length), newOffset);
 
             return '<apply><times/>' + mathml + rest + '</apply>';
         }
@@ -308,10 +352,10 @@ class ExpressionNode extends MathNode {
     _parseOperator(precis, offset, operatorPos) {
         var op = precis[operatorPos];
         var lhs = this._parse(
-            precis.substring(0, operatorPos),
+            precis.slice(0, operatorPos),
             offset);
         var rhs = this._parse(
-            precis.substring(operatorPos + 1),
+            precis.slice(operatorPos + 1),
             offset + operatorPos + 1);
 
         var op_tags = {'+': '<plus/>', '-': '<minus/>', '*': '<times/>'};
