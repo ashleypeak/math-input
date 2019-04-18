@@ -6,14 +6,11 @@ const template = document.createElement('template');
 template.innerHTML = `
     <style type='text/css'>
         .wrapper {
-            display: inline-block;
+            display:inline-flex;
             border: 1px solid;
             padding: 3px;
             background-color: #ffffff;
             min-width: 200px;
-            min-height: 20px;
-            white-space: nowrap;
-            overflow: hidden;
             cursor: text;
             font-family: "Helvetica Neue", Arial, sans-serif;
             font-size: 12pt;
@@ -24,36 +21,48 @@ template.innerHTML = `
             background-color: #f2dede;
         }
 
-        .wrapper span {
-            display: inline-block;
-            vertical-align: middle;
-            padding: 0px 1px 0px 0px;
-            cursor: text;
-            min-width: 5px;
-            min-height: 20px;
+        .wrapper .expression {
+            display:inline-flex;
+            align-items: center;
         }
 
-        .wrapper span.cursor {
+        .wrapper .unit {
+            min-width: 3px;
+            min-height: 20px;
+            margin: 0px;
+            padding: 0px 1px 0px 0px;
+        }
+
+        .wrapper .unit.cursor {
             padding-right: 0px;
             border-right: 1px solid;
         }
 
-        .wrapper .division, .mathinput .numerator, .mathinput .denominator {
-            padding: 0px 5px;    
+        .wrapper .atom {
         }
 
         .wrapper .division {
-            text-align: center;
-            vertical-align: -20px;
+            display: flex;
+            flex-direction: column;
+            padding: 2px;
         }
 
         .wrapper .division.cursor {
-            padding: 0px 4px 0px 5px;
+            padding: 2px 1px 2px 2px;
+        }
+
+        .wrapper .numerator, .wrapper .denominator {
+            display: flex;
+            justify-content: center;
+        }
+
+        .wrapper .numerator {
+            padding: 3px 5px 2px 2px;
         }
 
         .wrapper .denominator {
             border-top: 1px solid;
-            display: block;
+            padding: 2px 5px 2px 2px;
         }
     </style>
     <div id='wrapper' class='wrapper'>

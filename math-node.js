@@ -14,7 +14,7 @@ class MathNode {
      */
     constructor(parent=null) {
         this._parent = parent;
-        this._element = null;
+        this._element = document.createElement('div');
     }
 
 
@@ -161,14 +161,13 @@ class ExpressionNode extends MathNode {
         super(parent);
 
         this._nodes = new Array();
-        this._element = document.createElement('span');
+        this._element.classList.add('expression');
 
         //every expression starts with a span, serves as the cursor location before
         //the first element
         //has to be inserted manually because there is no child in a new ExpressionNode
         //to insert it after
-        var startNode = new StartNode();
-        startNode.parent = this;
+        var startNode = new StartNode(this);
         this._nodes.push(startNode);
         this._element.appendChild(startNode.element);
     }
@@ -453,6 +452,7 @@ class UnitNode extends MathNode {
      */
     constructor(parent=null) {
         super(parent);
+        this._element.classList.add('unit');
     }
 
     /**
@@ -615,9 +615,7 @@ class StartNode extends UnitNode {
      */
     constructor(parent=null) {
         super(parent);
-
-        this._element = document.createElement('span');
-        this._element.className = 'empty';
+        this._element.classList.add('start');
     }
 
     /**
@@ -637,8 +635,7 @@ class AtomNode extends UnitNode {
     constructor(char, parent=null) {
         super(parent);
         this._char = char;
-
-        this._element = document.createElement('span');
+        this._element.classList.add('atom');
         this._element.innerHTML = this.displayChar;
     }
 
@@ -672,8 +669,6 @@ class DivisionNode extends UnitNode {
      */
     constructor(parent=null) {
         super(parent);
-
-        this._element = document.createElement('span');
         this._element.classList.add('division');
 
         this._numerator = new ExpressionNode(this);
