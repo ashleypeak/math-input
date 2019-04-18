@@ -3,6 +3,7 @@ class Utils {
      * Given a position of a parenthesis '(' or ')', find its matching
      * parenthesis, and return its location. Throw an error if there is no
      * matching parenthesis.
+     * If there's no match, return null;
      * 
      * @param  {String} str    The string being scanned
      * @param  {Number} start  The location of the open parenthesis
@@ -23,7 +24,7 @@ class Utils {
                 }
             }
 
-            throw new Error('Unmatched parenthesis');
+            return null;
         } else if(str[start] == ')') {
             for(var i = start - 1; i >= 0; i--) {
                 if(str[i] == '(') {
@@ -36,7 +37,7 @@ class Utils {
                 }
             }
 
-            throw new Error('Unmatched parenthesis');
+            return null;
         }
 
         throw new Error('Unrecognised parenthesis');
@@ -377,6 +378,11 @@ class ExpressionNode extends MathNode {
         if(/^\(/.test(precis)) {
             //can't find end using `masked` because (1)(2) would return 5 not 2
             var end = Utils.findMatchingParen(precis, 0);
+
+            if(end === null) {
+                throw new Error('Unmatched parenthesis.');
+            }
+
             var term = precis.slice(0, end + 1);
             var mathml = this._parse(term.slice(1, -1), offset + 1);
 
@@ -399,6 +405,11 @@ class ExpressionNode extends MathNode {
         var start = -1;
         while((start = masked.indexOf('(')) != -1) {
             var end = Utils.findMatchingParen(masked, start);
+
+            if(end === null) {
+                throw new Error('Unmatched parenthesis.');
+            }
+
             var len = end - start + 1;
 
             masked = masked.substr(0, start) + '#'.repeat(len) + masked.substr(end + 1);
@@ -842,16 +853,15 @@ class BracketNode extends UnitNode {
     redraw(nodeParams) {
         var precis = this.parent.precis;
         var start = this.parent.indexOf(this);
-        try {
-            var end = Utils.findMatchingParen(precis, start);
 
-        } catch(error) {
+        var end = Utils.findMatchingParen(precis, start);
+        if(end === null) {
             //This -1 is confusing, but the start and end are supposed to be
             //the positions of the brackets. If there's no starting bracket,
             //we imagine it just before the string, at position -1.
             //Not to be confused with indexOf()'s -1 not present or slice()'s
             //last element.
-            var end = this._char == '(' ? precis.length : -1;
+            end = this._char == '(' ? precis.length : -1;
         }
 
         if(start > end) {
@@ -976,7 +986,6 @@ class DivisionNode extends UnitNode {
         } while(node = node.previousSibling)
 
         //match everything that should move to numerator, fairly arbitrary
-        //TODO when I intoduce brackets, they need to be taken into account
         var match = precis.match(/[a-zA-Z0-9]+$/);
         if(match !== null) {
             for(var i = 0; i < match[0].length; i++) {
@@ -984,9 +993,24 @@ class DivisionNode extends UnitNode {
             }
 
             return true;
-        } else {
-            return false;
         }
+
+        match = precis.match(/\)$/);
+        if(match !== null) {
+            var start = Utils.findMatchingParen(precis, precis.length-1);
+            if(start === null) {
+                start = 0;
+            }
+
+            var count = precis.length - start;
+            for(var i = 0; i < count; i++) {
+                this.numerator.startNode.insertAfter(this.previousSibling);
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
