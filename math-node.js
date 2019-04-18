@@ -841,7 +841,7 @@ class BracketNode extends UnitNode {
         super(parent);
         this._char = char;
         this._element.classList.add('bracket');
-        this._element.innerHTML = char;
+        this._element.innerHTML = this.displayChar;
     }
 
     /**
@@ -877,6 +877,10 @@ class BracketNode extends UnitNode {
         this._element.style.lineHeight = heightStr;
         this._element.style.fontSize = heightStr;
 
+        var svg = this._element.getElementsByTagName('svg')[0];
+        svg.style.height = heightStr;
+        svg.style.width = (maxInnerHeight/4).toString() + 'px';
+
         //because brackets grow with contents, we only want marginTop to
         //increase if there are larger elements outside
         var maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
@@ -892,6 +896,31 @@ class BracketNode extends UnitNode {
     get precis() {
         return this._char;
     }
+
+    /**
+     * Returns the character which should be displayed in the input field.
+     * 
+     * @return {String} The character to be displayed
+     */
+    get displayChar() {
+        if(this._char == '(') {
+            return `
+                <svg style='width:25px;height:100px;' viewBox="0 0 23.671175 93.999996">
+                <g transform="matrix(-5.564574,0,0,5.564574,30.768631,-73.23996)">
+                  <path d="M 2.4092605,30.054405 C 3.2823107,28.95284 4.0205912,27.663779 4.6241042,26.187218 5.2276212,24.710657 5.5293787,23.181361 5.5293776,21.599327 5.5293787,20.204802 5.303793,18.868866 4.8526198,17.591515 4.3252784,16.109103 3.5108261,14.632542 2.4092605,13.161827 H 1.2754714 c 0.708989,1.218762 1.1777385,2.088878 1.40625,2.610352 0.3574254,0.808603 0.6386752,1.652352 0.84375,2.53125 0.251956,1.09571 0.3779324,2.197271 0.3779297,3.304687 2.7e-6,2.818361 -0.875973,5.633788 -2.6279297,8.446289 z" /></g></svg>
+                `;
+        } else if(this._char == ')') {
+            return `
+                <svg style='width:25px;height:100px;' viewBox="0 0 23.671175 93.999996">
+                <g transform="matrix(5.564574,0,0,5.564574,-7.0974548,-73.23996)">
+                  <path d="M 2.4092605,30.054405 C 3.2823107,28.95284 4.0205912,27.663779 4.6241042,26.187218 5.2276212,24.710657 5.5293787,23.181361 5.5293776,21.599327 5.5293787,20.204802 5.303793,18.868866 4.8526198,17.591515 4.3252784,16.109103 3.5108261,14.632542 2.4092605,13.161827 H 1.2754714 c 0.708989,1.218762 1.1777385,2.088878 1.40625,2.610352 0.3574254,0.808603 0.6386752,1.652352 0.84375,2.53125 0.251956,1.09571 0.3779324,2.197271 0.3779297,3.304687 2.7e-6,2.818361 -0.875973,5.633788 -2.6279297,8.446289 z" /></g></svg>
+                `;
+        } else  {
+            return this._char;
+        }
+    }
+
+
 }
 
 
