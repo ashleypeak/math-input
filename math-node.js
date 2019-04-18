@@ -282,11 +282,8 @@ class ExpressionNode extends MathNode {
      * @return {String}        A MathML string
      */
     _parse(precis, offset=0) {
-        try {
-            var masked = BracketNode.mask(precis);
-        } catch(error) {
-            throw error;
-        }
+        var masked = BracketNode.mask(precis);
+        var masked = AbsoluteNode.mask(masked);
 
         //matches last +/-. Needs to be done in reverse order: consider a-b+c
         var match = masked.match(/[+\-](?!.*[+\-])/);
@@ -820,8 +817,6 @@ class BracketNode extends UnitNode {
         var heightStr = maxInnerHeight.toString() + 'px';
 
         this._element.style.height = heightStr;
-        this._element.style.lineHeight = heightStr;
-        this._element.style.fontSize = heightStr;
 
         var svg = this._element.getElementsByTagName('svg')[0];
         svg.style.height = heightStr;
@@ -930,7 +925,6 @@ class BracketNode extends UnitNode {
             var len = end - start + 1;
 
             masked = masked.substr(0, start) + '#'.repeat(len) + masked.substr(end + 1);
-            console.log(masked);
         }
 
         return masked;
@@ -1039,7 +1033,6 @@ class AbsoluteNode extends UnitNode {
 
         //mask everything outside of that context
         var masked = '#'.repeat(open + 1) + str.slice(open + 1, close) + '#'.repeat(str.length - close);
-        console.log(masked);
 
         //then mask all fully-enclosed bracketed terms inside the context
         masked = BracketNode.mask(masked);
@@ -1058,6 +1051,33 @@ class AbsoluteNode extends UnitNode {
                 return null;
             }
         }
+    }
+
+    /**
+     * Replace all matching pipes with # so that scanning functions can't
+     * see elements between the pipes.
+     * Because this runs after BracketNode.mask, we don't need to worry about
+     * context like we do in findMatchingPipes - just pair them off.
+     * 
+     * @param  {String} str The unmasked string
+     * @return {String}     The masked string
+     */
+    static mask(str) {
+        var masked = str;
+        var start = -1;
+        while((start = masked.indexOf('|')) != -1) {
+            var end = masked.indexOf('|', start + 1);
+
+            if(end === null) {
+                end = str.length - 1;
+            }
+
+            var len = end - start + 1;
+
+            masked = masked.substr(0, start) + '#'.repeat(len) + masked.substr(end + 1);
+        }
+
+        return masked;
     }
 }
 
