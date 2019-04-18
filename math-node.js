@@ -1,48 +1,3 @@
-class Utils {
-    /**
-     * Given a position of a parenthesis '(' or ')', find its matching
-     * parenthesis, and return its location. Throw an error if there is no
-     * matching parenthesis.
-     * If there's no match, return null;
-     * 
-     * @param  {String} str    The string being scanned
-     * @param  {Number} start  The location of the open parenthesis
-     * @return {Number}        The location of the close parenthesis
-     */
-    static findMatchingParen(str, start) {
-        var depth = 1;
-
-        if(str[start] == '(') {
-            for(var i = start + 1; i < str.length; i++) {
-                if(str[i] == ')') {
-                    depth--;
-                    if(depth == 0) {
-                        return i;
-                    }
-                } else if(str[i] == '(') {
-                    depth++;
-                }
-            }
-
-            return null;
-        } else if(str[start] == ')') {
-            for(var i = start - 1; i >= 0; i--) {
-                if(str[i] == '(') {
-                    depth--;
-                    if(depth == 0) {
-                        return i;
-                    }
-                } else if(str[i] == ')') {
-                    depth++;
-                }
-            }
-
-            return null;
-        }
-
-        throw new Error('Unrecognised parenthesis');
-    }
-}
 /**
  * Virtual class, don't instantiate.
  *
@@ -194,6 +149,8 @@ class MathNode {
             return new DivisionNode();
         } else if(/^[()]$/.test(char)) {
             return new BracketNode(char);
+        } else if(/^\|$/.test(char)) {
+            return new AbsoluteNode();
         } else {
             throw new Error('Not yet implemented: ' + char);
         }
@@ -325,9 +282,8 @@ class ExpressionNode extends MathNode {
      * @return {String}        A MathML string
      */
     _parse(precis, offset=0) {
-        //TODO mask brackets/absolute
         try {
-            var masked = this._mask(precis);
+            var masked = BracketNode.mask(precis);
         } catch(error) {
             throw error;
         }
@@ -377,7 +333,7 @@ class ExpressionNode extends MathNode {
         //if it starts with a parenthesis
         if(/^\(/.test(precis)) {
             //can't find end using `masked` because (1)(2) would return 5 not 2
-            var end = Utils.findMatchingParen(precis, 0);
+            var end = BracketNode.findMatchingParen(precis, 0);
 
             if(end === null) {
                 throw new Error('Unmatched parenthesis.');
@@ -389,33 +345,23 @@ class ExpressionNode extends MathNode {
             return this._termOrImplicitTimes(term, mathml, precis, offset);
         }
 
-        //if no match has been found
-        throw new Error('Cannot parse input.');
-    }
+        //if it starts with a pipe
+        if(/^\|/.test(precis)) {
+            var end = precis.indexOf('|', 1);
 
-    /**
-     * Replace all bracketed terms with # so that operators within brackets
-     * aren't seen by _parse()
-     * 
-     * @param  {String} precis The unmasked precis
-     * @return {String}        The masked precis
-     */
-    _mask(precis) {
-        var masked = precis;
-        var start = -1;
-        while((start = masked.indexOf('(')) != -1) {
-            var end = Utils.findMatchingParen(masked, start);
-
-            if(end === null) {
-                throw new Error('Unmatched parenthesis.');
+            if(end === -1) {
+                throw new Error('Unmatched pipe.');
             }
 
-            var len = end - start + 1;
+            var term = precis.slice(0, end + 1);
+            var innerMathml = this._parse(term.slice(1, -1), offset + 1);
+            var mathml = '<apply><abs/>' + innerMathml + '</apply>';
 
-            masked = masked.substr(0, start) + '#'.repeat(len) + masked.substr(end + 1);
+            return this._termOrImplicitTimes(term, mathml, precis, offset);
         }
 
-        return masked;
+        //if no match has been found
+        throw new Error('Cannot parse input.');
     }
 
     /**
@@ -854,7 +800,7 @@ class BracketNode extends UnitNode {
         var precis = this.parent.precis;
         var start = this.parent.indexOf(this);
 
-        var end = Utils.findMatchingParen(precis, start);
+        var end = BracketNode.findMatchingParen(precis, start);
         if(end === null) {
             //This -1 is confusing, but the start and end are supposed to be
             //the positions of the brackets. If there's no starting bracket,
@@ -920,7 +866,199 @@ class BracketNode extends UnitNode {
         }
     }
 
+    /**
+     * Given a position of a parenthesis '(' or ')', find its matching
+     * parenthesis, and return its location. Throw an error if there is no
+     * matching parenthesis.
+     * If there's no match, return null;
+     * 
+     * @param  {String} str    The string being scanned
+     * @param  {Number} start  The location of the open parenthesis
+     * @return {Number}        The location of the close parenthesis
+     */
+    static findMatchingParen(str, start) {
+        var depth = 1;
 
+        if(str[start] == '(') {
+            for(var i = start + 1; i < str.length; i++) {
+                if(str[i] == ')') {
+                    depth--;
+                    if(depth == 0) {
+                        return i;
+                    }
+                } else if(str[i] == '(') {
+                    depth++;
+                }
+            }
+
+            return null;
+        } else if(str[start] == ')') {
+            for(var i = start - 1; i >= 0; i--) {
+                if(str[i] == '(') {
+                    depth--;
+                    if(depth == 0) {
+                        return i;
+                    }
+                } else if(str[i] == ')') {
+                    depth++;
+                }
+            }
+
+            return null;
+        }
+
+        throw new Error('Unrecognised parenthesis');
+    }
+
+    /**
+     * Replace all bracketed terms with # so that scanning functions can't
+     * see elements between brackets
+     * 
+     * @param  {String} str The unmasked string
+     * @return {String}     The masked string
+     */
+    static mask(str) {
+        var masked = str;
+        var start = -1;
+        while((start = masked.indexOf('(')) != -1) {
+            var end = BracketNode.findMatchingParen(masked, start);
+
+            if(end === null) {
+                end = str.length - 1;
+            }
+
+            var len = end - start + 1;
+
+            masked = masked.substr(0, start) + '#'.repeat(len) + masked.substr(end + 1);
+            console.log(masked);
+        }
+
+        return masked;
+    }
+    
+    /**
+     * Given a string and an element in the string, find if it's inside
+     * of brackets and, if so, where they are.
+     * Responds with an array [open, close}, each of which are either a position
+     * or null
+     * 
+     * @param  {String} str   The string to be scanned
+     * @param  {Number} start The position whose context we want
+     * @return {Array}       The positions of the start and end of the context
+     */
+    static getContext(str, start) {
+        str = str.slice(0, start) + ')' + str.slice(start + 1);
+        var open = BracketNode.findMatchingParen(str, start);
+        str = str.slice(0, start) + '(' + str.slice(start + 1);
+        var close = BracketNode.findMatchingParen(str, start);
+
+        return [open, close];
+    }
+}
+
+
+class AbsoluteNode extends UnitNode {
+    /**
+     * @constructs
+     */
+    constructor(char, parent=null) {
+        super(parent);
+        this._element.classList.add('bracket');
+        this._element.innerHTML = '|';
+    }
+
+    /**
+     * Given `nodeParams`, dimensions of all other nodes in the expression,
+     * redraw this node to line up.
+     * 
+     * @param  {Array} nodeParams The dimensions of all nodes in the element;
+     */
+    redraw(nodeParams) {
+        var precis = this.parent.precis;
+        var start = this.parent.indexOf(this);
+
+        var end = AbsoluteNode.findMatchingPipe(precis, start);
+        if(end === null) {
+            [open, close] = BracketNode.getContext(precis, start);
+
+            if(close !== null) {
+                end = close;
+            } else {
+                end = precis.length;
+            }
+        }
+
+        if(start > end) {
+            [start, end] = [end, start];
+        }
+
+        var innerParams = nodeParams.slice(start+1, end);
+        //note this.height refers to default height, not css height
+        var maxInnerHeight = innerParams.reduce((acc, node) => Math.max(acc, node.height), this.height)
+        var heightStr = maxInnerHeight.toString() + 'px';
+
+        this._element.style.height = heightStr;
+        this._element.style.lineHeight = heightStr;
+        this._element.style.fontSize = heightStr;
+
+        //because pipes grow with contents, we only want marginTop to
+        //increase if there are larger elements outside
+        var maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
+        var maxInnerCenter = innerParams.reduce((acc, node) => Math.max(acc, node.center), this.center)
+        var diff = Math.floor(maxCenter - maxInnerCenter);
+        this._element.style.marginTop = diff.toString() + 'px';
+    }
+
+    /**
+     * @override
+     * @return {String} The node precis
+     */
+    get precis() {
+        return '|';
+    }
+
+    /**
+     * Given a position of a pipe '|', find its matching element.
+     * Logic complicated, see function. Return null if no match.
+     * 
+     * @param  {String} str    The string being scanned
+     * @param  {Number} start  The location of the pipe we know
+     * @return {Number}        The location of the matching pipe
+     */
+    static findMatchingPipe(str, start) {
+        //first, find the start/end of the bracketed term we're in
+        [open, close] = BracketNode.getContext(str, start);
+
+        if(open === null) {
+            open = -1;
+        }
+
+        if(close === null) {
+            close = str.length;
+        }
+
+        //mask everything outside of that context
+        var masked = '#'.repeat(open + 1) + str.slice(open + 1, close) + '#'.repeat(str.length - close);
+        console.log(masked);
+
+        //then mask all fully-enclosed bracketed terms inside the context
+        masked = BracketNode.mask(masked);
+
+        //now just pair them off from the start. if there are an odd number
+        //before, match backwards, otherwise match forwards.
+        var prevMatches = masked.substring(0, start).match(/\|/g);
+        if(prevMatches !== null && prevMatches.length % 2 == 1) {
+            return masked.lastIndexOf('|', start - 1);
+        } else {
+            var match = masked.indexOf('|', start + 1);
+
+            if(match !== -1) {
+                return match;
+            } else {
+                return null;
+            }
+        }
+    }
 }
 
 
@@ -1026,7 +1164,7 @@ class DivisionNode extends UnitNode {
 
         match = precis.match(/\)$/);
         if(match !== null) {
-            var start = Utils.findMatchingParen(precis, precis.length-1);
+            var start = BracketNode.findMatchingParen(precis, precis.length-1);
             if(start === null) {
                 start = 0;
             }
