@@ -42,6 +42,13 @@ template.innerHTML = `
         .wrapper .atom {
         }
 
+        .wrapper .pipe .pipe-display {
+            height: 100%;
+            width: 1px;
+            background-color: #000000;
+            margin-left: 1px;
+        }
+
         .wrapper .division {
             display: flex;
             flex-direction: column;

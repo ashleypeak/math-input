@@ -957,8 +957,11 @@ class AbsoluteNode extends UnitNode {
      */
     constructor(char, parent=null) {
         super(parent);
-        this._element.classList.add('bracket');
-        this._element.innerHTML = '|';
+        this._element.classList.add('pipe');
+
+        var pipeDisp = document.createElement('div');
+        pipeDisp.classList.add('pipe-display')
+        this._element.appendChild(pipeDisp);
     }
 
     /**
@@ -992,8 +995,6 @@ class AbsoluteNode extends UnitNode {
         var heightStr = maxInnerHeight.toString() + 'px';
 
         this._element.style.height = heightStr;
-        this._element.style.lineHeight = heightStr;
-        this._element.style.fontSize = heightStr;
 
         //because pipes grow with contents, we only want marginTop to
         //increase if there are larger elements outside
