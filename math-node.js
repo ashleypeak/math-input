@@ -47,6 +47,16 @@ class MathNode {
     get element() {
         return this._element;
     }
+
+    /**
+     * Get the height of `_element`
+     *
+     * @abstract
+     * @return {Number} Element height
+     */
+    get height() {
+        throw new Error('You must define height()');
+    }
     
 
     /** MISCELLANEOUS FUNCTIONS */
@@ -176,6 +186,14 @@ class ExpressionNode extends MathNode {
     /** GETTERS AND SETTERS */
 
     /**
+     * @override
+     * @return {Number} Element height
+     */
+    get height() {
+        return this.nodes.reduce((acc, node) => Math.max(acc, node.height), 0);
+    }
+
+    /**
      * Returns a MathML string representing the expression in the field. Used
      * to populate the 'value' attribute.
      * 
@@ -215,6 +233,27 @@ class ExpressionNode extends MathNode {
 
 
     /** MISCELLANEOUS */
+
+    /**
+     * When a new element has been inserted, all nodes need to be redrawn to
+     * line up properly. Get the dimensions of all child nodes, then get them
+     * to redraw themselves on that information.
+     * Higher-level Expressions need to be redrawn as well, but not lower-level
+     * ones.
+     */
+    redraw() {
+        var nodeParams = this.nodes.map((el) => ({height: el.height, center: el.center}));
+
+        this.nodes.forEach(function(node) {
+            node.redraw(nodeParams);
+        });
+
+        //Redraw the grandparent expression as well.
+        //Expression parents are Units, all Units have a parent Expression, so
+        //if this has a parent, it has a grandparent.
+        if(this.parent !== null)
+            this.parent.parent.redraw();
+    }
 
     /**
      * Given a precis of `_nodes` (or some subset thereof), return a MathML
@@ -288,6 +327,13 @@ class ExpressionNode extends MathNode {
         throw new Error('Cannot parse input.');
     }
 
+    /**
+     * Replace all bracketed terms with # so that operators within brackets
+     * aren't seen by _parse()
+     * 
+     * @param  {String} precis The unmasked precis
+     * @return {String}        The masked precis
+     */
     _mask(precis) {
         var masked = precis;
         var start = -1;
@@ -301,6 +347,15 @@ class ExpressionNode extends MathNode {
         return masked;
     }
 
+    /**
+     * Given a position of an open parenthesis '(', find its matching close
+     * parenthesis, and return its location. Throw an error if there is no
+     * matching parenthesis.
+     * 
+     * @param  {String} precis The precis being scanned
+     * @param  {Number} start  The location of the open parenthesis
+     * @return {Number}        The location of the close parenthesis
+     */
     _findMatchingParen(precis, start) {
         var depth = 1;
         for(var i = start + 1; i < precis.length; i++) {
@@ -387,6 +442,8 @@ class ExpressionNode extends MathNode {
         } else {
             this._element.appendChild(newNode.element);
         }
+
+        this.redraw();
     }
 
     /**
@@ -478,6 +535,8 @@ class ExpressionNode extends MathNode {
 
         this._nodes.splice(index, 1);
         this._element.removeChild(node.element);
+
+        this.redraw();
     }
 }
 
@@ -497,6 +556,25 @@ class UnitNode extends MathNode {
     constructor(parent=null) {
         super(parent);
         this._element.classList.add('unit');
+    }
+
+    /**
+     * @override
+     * @return {Number} Element height
+     */
+    get height() {
+        //TODO remove magic number
+        return 17;
+    }
+
+    /**
+     * Get the center align position of `_element`
+     *
+     * @return {Number} Element center
+     */
+    get center() {
+        //TODO remove magic number
+        return 8.5;
     }
 
     /**
@@ -579,6 +657,21 @@ class UnitNode extends MathNode {
 
 
     /** MISCELLANEOUS FUNCTIONS */
+
+    /**
+     * Given `nodeParams`, dimensions of all other nodes in the expression,
+     * redraw this node to line up.
+     * 
+     * @param  {Array} nodeParams The dimensions of all nodes in the element;
+     */
+    redraw(nodeParams) {
+        var maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
+        var diff = maxCenter - this.center;
+        console.log(this);
+        console.log(nodeParams)
+        console.log(diff);
+        this._element.style.marginTop = diff.toString() + 'px';
+    }
 
     /**
      * Get the element to the left of the current node. This may not be a
@@ -723,6 +816,22 @@ class DivisionNode extends UnitNode {
 
         this._element.appendChild(this._numerator.element);
         this._element.appendChild(this._denominator.element);
+    }
+
+    /**
+     * @override
+     * @return {Number} Element height
+     */
+    get height() {
+        return this.numerator.height + this.denominator.height + 5;
+    }
+
+    /**
+     * @override
+     * @return {Number} Element center
+     */
+    get center() {
+        return this.numerator.height + 3;
     }
 
     /**

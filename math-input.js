@@ -6,14 +6,15 @@ const template = document.createElement('template');
 template.innerHTML = `
     <style type='text/css'>
         .wrapper {
-            display:inline-flex;
+            display: inline-flex;
             border: 1px solid;
-            padding: 3px;
+            padding: 5px 5px 5px 3px;
             background-color: #ffffff;
             min-width: 200px;
             cursor: text;
             font-family: "Helvetica Neue", Arial, sans-serif;
-            font-size: 12pt;
+            font-size: 17px;
+            line-height: 17px;
         }
 
         .wrapper.error {
@@ -22,13 +23,13 @@ template.innerHTML = `
         }
 
         .wrapper .expression {
-            display:inline-flex;
-            align-items: center;
+            display: inline-flex;
+            align-items: flex-start;
         }
 
         .wrapper .unit {
             min-width: 3px;
-            min-height: 20px;
+            min-height: 17px;
             margin: 0px;
             padding: 0px 1px 0px 0px;
         }
@@ -44,11 +45,11 @@ template.innerHTML = `
         .wrapper .division {
             display: flex;
             flex-direction: column;
-            padding: 2px;
+            padding: 0px 2px;
         }
 
         .wrapper .division.cursor {
-            padding: 2px 1px 2px 2px;
+            padding: 0px 1px 0px 2px;
         }
 
         .wrapper .numerator, .wrapper .denominator {
@@ -57,12 +58,12 @@ template.innerHTML = `
         }
 
         .wrapper .numerator {
-            padding: 3px 5px 2px 2px;
+            padding: 0px 5px 2px 2px;
         }
 
         .wrapper .denominator {
             border-top: 1px solid;
-            padding: 2px 5px 2px 2px;
+            padding: 2px 5px 0px 2px;
         }
     </style>
     <div id='wrapper' class='wrapper'>
@@ -264,6 +265,7 @@ class MathInput extends HTMLElement {
         this.cursorNode = node;
 
         this.updateValue();
+        this.cursorNode.parent.redraw();
 
         return node;
     }
