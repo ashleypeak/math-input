@@ -1,3 +1,47 @@
+class Utils {
+    /**
+     * Given a position of a parenthesis '(' or ')', find its matching
+     * parenthesis, and return its location. Throw an error if there is no
+     * matching parenthesis.
+     * 
+     * @param  {String} str    The string being scanned
+     * @param  {Number} start  The location of the open parenthesis
+     * @return {Number}        The location of the close parenthesis
+     */
+    static findMatchingParen(str, start) {
+        var depth = 1;
+
+        if(str[start] == '(') {
+            for(var i = start + 1; i < str.length; i++) {
+                if(str[i] == ')') {
+                    depth--;
+                    if(depth == 0) {
+                        return i;
+                    }
+                } else if(str[i] == '(') {
+                    depth++;
+                }
+            }
+
+            throw new Error('Unmatched parenthesis');
+        } else if(str[start] == ')') {
+            for(var i = start - 1; i >= 0; i--) {
+                if(str[i] == '(') {
+                    depth--;
+                    if(depth == 0) {
+                        return i;
+                    }
+                } else if(str[i] == ')') {
+                    depth++;
+                }
+            }
+
+            throw new Error('Unmatched parenthesis');
+        }
+
+        throw new Error('Unrecognised parenthesis');
+    }
+}
 /**
  * Virtual class, don't instantiate.
  *
@@ -143,10 +187,12 @@ class MathNode {
      * @return {MathNode} The resultant MathNode
      */
     static buildFromCharacter(char) {
-        if(/^[a-zA-Z0-9.+\-*()]$/.test(char)) {
+        if(/^[a-zA-Z0-9.+\-*]$/.test(char)) {
             return new AtomNode(char);
         } else if(/^\/$/.test(char)) {
             return new DivisionNode();
+        } else if(/^[()]$/.test(char)) {
+            return new BracketNode(char);
         } else {
             throw new Error('Not yet implemented: ' + char);
         }
@@ -194,14 +240,23 @@ class ExpressionNode extends MathNode {
     }
 
     /**
+     * Get a precis of the expression, a string with each node represented by
+     * a character
+     * 
+     * @return {String} A summary of the expression's nodes
+     */
+    get precis() {
+        return this._nodes.reduce((acc, node) => acc + node.precis, '');
+    }
+
+    /**
      * Returns a MathML string representing the expression in the field. Used
      * to populate the 'value' attribute.
      * 
      * @return {String} The MathML string representing this element
      */
     get value() {
-        var precis = this._nodes.reduce((acc, node) => acc + node.precis, '');
-        return this._parse(precis);
+        return this._parse(this.precis);
     }
 
     /**
@@ -268,7 +323,7 @@ class ExpressionNode extends MathNode {
      * @param  {Number} offset The offset between `precis` and `_nodes`
      * @return {String}        A MathML string
      */
-    _parse(precis, offset=1) {
+    _parse(precis, offset=0) {
         //TODO mask brackets/absolute
         try {
             var masked = this._mask(precis);
@@ -286,6 +341,11 @@ class ExpressionNode extends MathNode {
         var match = masked.match(/\*/);
         if(match !== null) {
             return this._parseOperator(precis, offset, match.index);
+        }
+
+        //if it starts with an _ i.e. a StartNode
+        if(/^_/.test(precis)) {
+            return this._parse(precis.slice(1), offset+1)
         }
 
         //if it starts with a number
@@ -316,7 +376,7 @@ class ExpressionNode extends MathNode {
         //if it starts with a parenthesis
         if(/^\(/.test(precis)) {
             //can't find end using `masked` because (1)(2) would return 5 not 2
-            var end = this._findMatchingParen(precis, 0);
+            var end = Utils.findMatchingParen(precis, 0);
             var term = precis.slice(0, end + 1);
             var mathml = this._parse(term.slice(1, -1), offset + 1);
 
@@ -338,38 +398,13 @@ class ExpressionNode extends MathNode {
         var masked = precis;
         var start = -1;
         while((start = masked.indexOf('(')) != -1) {
-            var end = this._findMatchingParen(masked, start);
+            var end = Utils.findMatchingParen(masked, start);
             var len = end - start + 1;
 
             masked = masked.substr(0, start) + '#'.repeat(len) + masked.substr(end + 1);
         }
 
         return masked;
-    }
-
-    /**
-     * Given a position of an open parenthesis '(', find its matching close
-     * parenthesis, and return its location. Throw an error if there is no
-     * matching parenthesis.
-     * 
-     * @param  {String} precis The precis being scanned
-     * @param  {Number} start  The location of the open parenthesis
-     * @return {Number}        The location of the close parenthesis
-     */
-    _findMatchingParen(precis, start) {
-        var depth = 1;
-        for(var i = start + 1; i < precis.length; i++) {
-            if(precis[i] == ')') {
-                depth--;
-                if(depth == 0) {
-                    return i;
-                }
-            } else if(precis[i] == '(') {
-                depth++;
-            }
-        }
-
-        throw new Error('Unmatched parenthesis');
     }
 
     /**
@@ -425,11 +460,7 @@ class ExpressionNode extends MathNode {
      * @param  {MathNode} newNode The node being inserted
      */
     childInsertAfter(child, newNode) {
-        var index = this.nodes.findIndex((el) => el == child);
-
-        if(index == -1) {
-            throw new Error("Node not found.");
-        }
+        var index = this.indexOf(child);
 
         newNode.parent = this;
 
@@ -457,11 +488,7 @@ class ExpressionNode extends MathNode {
      * @return {MathNode}      The node to the left of `node`
      */
     childLeft(node, defaultNode) {
-        var index = this.nodes.findIndex((el) => el == node);
-
-        if(index == -1) {
-            throw new Error("Node not found.");
-        }
+        var index = this.indexOf(node);
 
         if(index !== 0) {
             return this.nodes[index - 1].cursorNodeFromRight;
@@ -478,11 +505,7 @@ class ExpressionNode extends MathNode {
      * @see  childLeft
      */
     childRight(node, defaultNode) {
-        var index = this.nodes.findIndex((el) => el == node);
-
-        if(index == -1) {
-            throw new Error("Node not found.");
-        }
+        var index = this.indexOf(node);
 
         if(index+1 < this.nodes.length) {
             return this.nodes[index + 1].cursorNodeFromLeft;
@@ -527,16 +550,22 @@ class ExpressionNode extends MathNode {
      * @param  {MathNode} node The node to be deleted
      */
     childDelete(node) {
-        var index = this.nodes.findIndex((el) => el == node);
-
-        if(index == -1) {
-            throw new Error("Node not found.");
-        }
+        var index = this.indexOf(node);
 
         this._nodes.splice(index, 1);
         this._element.removeChild(node.element);
 
         this.redraw();
+    }
+
+    indexOf(node) {
+        var index = this.nodes.findIndex((el) => el == node);
+
+        if(index == -1) {
+            throw new Error('Node not found.');
+        }
+
+        return index;
     }
 }
 
@@ -579,7 +608,7 @@ class UnitNode extends MathNode {
 
     /**
      * Get a single character representation of a UnitNode to allow for parsing.
-     * AtomNodes return their character, ExpressionNodes return nothing,
+     * AtomNodes return their character, ExpressionNodes return '_',
      * everything else returns '%', indicating that it will provide its own
      * value using UnitNode.value
      *
@@ -642,11 +671,7 @@ class UnitNode extends MathNode {
      * @return {MathNode} The previous node
      */
     get previousSibling() {
-        var index = this.parent.nodes.findIndex((el) => el == this);
-
-        if(index == -1) {
-            throw new Error("Node not found.");
-        }
+        var index = this.parent.indexOf(this);
 
         if(index == 0) {
             return null;
@@ -666,10 +691,7 @@ class UnitNode extends MathNode {
      */
     redraw(nodeParams) {
         var maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
-        var diff = maxCenter - this.center;
-        console.log(this);
-        console.log(nodeParams)
-        console.log(diff);
+        var diff = Math.floor(maxCenter - this.center);
         this._element.style.marginTop = diff.toString() + 'px';
     }
 
@@ -760,7 +782,7 @@ class StartNode extends UnitNode {
      * @return {String} The node precis
      */
     get precis() {
-        return '';
+        return '_';
     }
 }
 
@@ -796,6 +818,69 @@ class AtomNode extends UnitNode {
         } else {
             return this._char;
         }
+    }
+}
+
+
+class BracketNode extends UnitNode {
+    /**
+     * @constructs
+     */
+    constructor(char, parent=null) {
+        super(parent);
+        this._char = char;
+        this._element.classList.add('bracket');
+        this._element.innerHTML = char;
+    }
+
+    /**
+     * Given `nodeParams`, dimensions of all other nodes in the expression,
+     * redraw this node to line up.
+     * 
+     * @param  {Array} nodeParams The dimensions of all nodes in the element;
+     */
+    redraw(nodeParams) {
+        var precis = this.parent.precis;
+        var start = this.parent.indexOf(this);
+        try {
+            var end = Utils.findMatchingParen(precis, start);
+
+        } catch(error) {
+            //This -1 is confusing, but the start and end are supposed to be
+            //the positions of the brackets. If there's no starting bracket,
+            //we imagine it just before the string, at position -1.
+            //Not to be confused with indexOf()'s -1 not present or slice()'s
+            //last element.
+            var end = this._char == '(' ? precis.length : -1;
+        }
+
+        if(start > end) {
+            [start, end] = [end, start];
+        }
+
+        var innerParams = nodeParams.slice(start+1, end);
+        //note this.height refers to default height, not css height
+        var maxInnerHeight = innerParams.reduce((acc, node) => Math.max(acc, node.height), this.height)
+        var heightStr = maxInnerHeight.toString() + 'px';
+
+        this._element.style.height = heightStr;
+        this._element.style.lineHeight = heightStr;
+        this._element.style.fontSize = heightStr;
+
+        //because brackets grow with contents, we only want marginTop to
+        //increase if there are larger elements outside
+        var maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
+        var maxInnerCenter = innerParams.reduce((acc, node) => Math.max(acc, node.center), this.center)
+        var diff = Math.floor(maxCenter - maxInnerCenter);
+        this._element.style.marginTop = diff.toString() + 'px';
+    }
+
+    /**
+     * @override
+     * @return {String} The node precis
+     */
+    get precis() {
+        return this._char;
     }
 }
 
