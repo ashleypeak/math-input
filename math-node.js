@@ -1353,14 +1353,14 @@ class ExponentNode extends UnitNode {
         //   above the centreline
         // - if a parenthesis is typed, I want it to treat it as though
         //   it extends down to the baseline
-        // - the difference between the exponentNode's baseline and the actual
-        //   baseline is the same as a UnitNode's marginTop (I think, haven't
-        //   done it rigorously but it looks right)
+        // - the difference between the centreline and the baseline is exactly
+        //   equal to a UnitNode's `height`-`center` (actually the same as
+        //   `center` for now but that could change)
         // - the only UnitNode that's guaranteed to exist is the StartNode
-        // - so calculate its offset, and add it to the height
-        var maxCenter = this.parent.nodes.reduce((acc, node) => Math.max(acc, node.center), 0)
+        // - so calculate its difference, and add it to the height
+        var startHeight = this.parent.startNode.height;
         var startCenter = this.parent.startNode.center;
-        var diff = Math.floor(maxCenter - startCenter);
+        var diff = startCenter;
 
         return this.exponent.height + diff;
     }
