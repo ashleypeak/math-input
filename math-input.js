@@ -28,10 +28,13 @@ template.innerHTML = `
         }
 
         .wrapper .unit {
-            min-width: 3px;
-            min-height: 17px;
             margin: 0px;
             padding: 0px 1px 0px 0px;
+        }
+
+        .wrapper .start {
+            width: 3px;
+            height: 17px;
         }
 
         .wrapper .unit.cursor {
