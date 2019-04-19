@@ -42,9 +42,6 @@ template.innerHTML = `
             border-right: 1px solid;
         }
 
-        .wrapper .atom {
-        }
-
         .wrapper .division {
             display: flex;
             flex-direction: column;
@@ -117,6 +114,10 @@ template.innerHTML = `
             background-size: 100% 100%;
             background-image: url("data:image/svg+xml;charset=utf8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20xmlns%3Axlink%3D%27http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%27%20version%3D%271.1%27%20width%3D%2720%27%20height%3D%27380%27%3E%3Cpath%20d%3D%27M%200%2014%2020%2014%20V%200%20H%200%200%20Z%27%20%2F%3E%3C%2Fsvg%3E");
         }
+
+        .wrapper .square-root .radicand .start {
+            width: 0px;
+        }
     </style>
     <div id='wrapper' class='wrapper'>
     </div>
@@ -141,8 +142,7 @@ class MathInput extends HTMLElement {
         this.wrapper = this.shadowRoot.getElementById('wrapper');
 
         this.rootNode = new ExpressionNode(null);
-        this.expression = this.rootNode;
-        this._cursorNode = this.expression.startNode;
+        this.rootNode.cursor = this.rootNode.startNode;
 
         // this.render();
         this.wrapper.appendChild(this.rootNode.element);
@@ -304,7 +304,7 @@ class MathInput extends HTMLElement {
      * nodes will be inserted
      */
     get cursorNode() {
-        return this._cursorNode;
+        return this.rootNode.cursor;
     }
 
     /**
@@ -314,9 +314,7 @@ class MathInput extends HTMLElement {
      * @param  {MathNode} node The new cursorNode
      */
     set cursorNode(node) {
-        this._cursorNode.toggleCursor(false);
-        this._cursorNode = node;
-        this._cursorNode.toggleCursor(true);
+        this.rootNode.cursor = node;
     }
 
 

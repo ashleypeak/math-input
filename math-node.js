@@ -57,6 +57,43 @@ class MathNode {
     get height() {
         throw new Error('You must define height()');
     }
+
+    /**
+     * Get the current cursor node. Shouldn't need overriding
+     * 
+     * @return {MathNode} The current cursor node
+     */
+    get cursor() {
+        if(this.parent === null) {
+            return this._cursor;
+        } else {
+            throw new Error('Node is not a root node, so has no cursor.')
+        }
+    }
+
+    /**
+     * Set the current cursor node. Shouldn't need overriding
+     * 
+     * @param  {MathNode} node The new cursor node
+     */
+    set cursor(node) {
+        if(this.parent === null) {
+            var oldCursor = this._cursor;
+            this._cursor = node;
+
+            if(typeof oldCursor !== 'undefined') {
+                oldCursor.toggleCursor(false);
+
+                //this is kind of hacky, but I don't want the cursor on when
+                //the element is unfocused, and the only time the cursor is
+                //set while unfocused is on creation, and the only time
+                //oldCursor is undefined is on creation. So it works.
+                this._cursor.toggleCursor(true);
+            }
+        } else {
+            this.parent.cursor = node;
+        }
+    }
     
 
     /** MISCELLANEOUS FUNCTIONS */
@@ -154,7 +191,7 @@ class MathNode {
     /**
      * Toggle the cursor class. Used by MathInput.constuctor to flash cursor.
      * 
-     * @param  {Boolean} force If true, show cursor; if false, hide; if null, togggle
+     * @param  {Boolean} force override toggle, see classList.toggle docs
      */
     toggleCursor(force) {
         this._element.classList.toggle('cursor', force)
@@ -589,6 +626,13 @@ class UnitNode extends MathNode {
     constructor(parent=null) {
         super(parent);
         this._element.classList.add('unit');
+
+        var self = this;
+        this._element.addEventListener('click', function(e) {
+            //setting cursor bubbles up to root node, see `set cursor`
+            self.cursor = self;
+            e.stopPropagation();
+        });
     }
 
     /**
