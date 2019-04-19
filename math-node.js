@@ -356,12 +356,18 @@ class ExpressionNode extends MathNode {
      * `offset` starts at 1 to accomodate the StartNode, which isn't
      * represented in the precis
      *
+     * `preModifier` keeps track of a previous element which affects the next
+     * e.g. sin(x) has two terms: 'sin' and '(x)'. We pass 'sin' as a
+     * preModifier back to _parse, so that the engine knows to return the sine
+     * of 'x', not just 'x', on its next run.
+     *
      * @see  UnitNode.precis()
-     * @param  {String} precis A precis of a set of nodes
-     * @param  {Number} offset The offset between `precis` and `_nodes`
-     * @return {String}        A MathML string
+     * @param  {String} precis      A precis of a set of nodes
+     * @param  {Number} offset      The offset between `precis` and `_nodes`
+     * @param  {String} preModifier A preModifier, if any, that must be applied
+     * @return {String}             A MathML string
      */
-    _parse(precis, offset=0) {
+    _parse(precis, offset=0, preModifier=null) {
         var masked = BracketNode.mask(precis);
         var masked = AbsoluteNode.mask(masked);
 
@@ -387,7 +393,16 @@ class ExpressionNode extends MathNode {
             var term = precis.match(/^[0-9]+(\.[0-9]+)?/)[0];
             var mathml = '<cn>' + term + '</cn>';
 
-            return this._parseTerm(term, mathml, precis, offset);
+            return this._parseTerm(term, mathml, precis, offset, preModifier);
+        }
+
+        //if it starts with a known function
+        var functionPattern = /^sin|cos|tan|ln/;
+        if(functionPattern.test(precis)) {
+            var term = precis.match(functionPattern)[0];
+            var len = term.length;
+
+            return this._parse(precis.slice(len), offset+len, term);
         }
 
         //if it starts with a letter
@@ -396,7 +411,7 @@ class ExpressionNode extends MathNode {
             var term = precis[0];
             var mathml = '<ci>' + term + '</ci>';
 
-            return this._parseTerm(term, mathml, precis, offset);
+            return this._parseTerm(term, mathml, precis, offset, preModifier);
         }
 
         //if it starts with a % i.e. is a non-Atom, non-Exponent UnitNode
@@ -404,7 +419,7 @@ class ExpressionNode extends MathNode {
             var term = precis[0];
             var mathml = this.nodes[offset].value;
 
-            return this._parseTerm(term, mathml, precis, offset);
+            return this._parseTerm(term, mathml, precis, offset, preModifier);
         }
 
         //if it starts with a parenthesis
@@ -419,7 +434,7 @@ class ExpressionNode extends MathNode {
             var term = precis.slice(0, end + 1);
             var mathml = this._parse(term.slice(1, -1), offset + 1);
 
-            return this._parseTerm(term, mathml, precis, offset);
+            return this._parseTerm(term, mathml, precis, offset, preModifier);
         }
 
         //if it starts with a pipe
@@ -434,7 +449,7 @@ class ExpressionNode extends MathNode {
             var innerMathml = this._parse(term.slice(1, -1), offset + 1);
             var mathml = '<apply><abs/>' + innerMathml + '</apply>';
 
-            return this._parseTerm(term, mathml, precis, offset);
+            return this._parseTerm(term, mathml, precis, offset, preModifier);
         }
 
         //if no match has been found
@@ -443,37 +458,75 @@ class ExpressionNode extends MathNode {
 
     /**
      * Given a `term`, a matched section at the start of a precis:
-     *  - if it comprises the entire precis, return it's calculated `mathml`
+     *  - make preModifier and postModifier alterations
+     *    - @see _parse(Pre|Post)Modifiers
+     *  - if the term comprises the entire precis, return it's calculated `mathml`
      *  - otherwise, parse the rest and multiply them together
      *  
+     * @param  {String} term        The portion of the precis identified as a term
+     * @param  {String} mathml      The mathml rendering of `term`
+     * @param  {String} precis      The full precis being parsed
+     * @param  {Number} offset      The precis' offset within the expression
+     * @param  {String} preModifier The preModifier - @see _parse
+     * @return {String}             The resultant mathml term
+     */
+    _parseTerm(term, mathml, precis, offset, preModifier) {
+        //I'm not certain that it will always be fine to run all postModifiers
+        //before all preModifiers, but it's fine (and necessary) for now.
+        [term, mathml, precis, offset] = this._parsePostModifiers(term, mathml, precis, offset);
+        if(preModifier !== null)
+            [term, mathml, precis, offset] = this._parsePreModifiers(term, mathml, precis, offset, preModifier);
+
+        if(term.length == precis.length) {
+            return mathml;
+        } else {
+            var offset = offset + term.length;
+            var rest = this._parse(precis.slice(term.length), offset);
+
+            return '<apply><times/>' + mathml + rest + '</apply>';
+        }
+    }
+
+    /**
+     * Looks for postModifiers - anything after a term which alters it (for
+     * example, an exponent or a prime sign). If there is, make appropriate
+     * changes to the arguments, then pass them back altered.
+     * 
      * @param  {String} term   The portion of the precis identified as a term
      * @param  {String} mathml The mathml rendering of `term`
      * @param  {String} precis The full precis being parsed
      * @param  {Number} offset The precis' offset within the expression
-     * @return {String}        The resultant mathml term
+     * @return {Array}         The function arguments, altered and returned
      */
-    _parseTerm(term, mathml, precis, offset) {
-        if(term.length == precis.length) {
-            return mathml;
-        } else {
-            if(precis[term.length] === '^') {
-                var exponent_mathml = this.nodes[offset+term.length].value;
-                mathml = '<apply><power/>' + mathml + exponent_mathml +  '</apply>';
-
-                //fudge so that the rest of the function will parse starting
-                //after the ExponentNode.
-                term += '^';
-
-                if(term.length == precis.length) {
-                    return mathml;
-                }
-            }
-
-            var newOffset = offset + term.length;
-            var rest = this._parse(precis.slice(term.length), newOffset);
-
-            return '<apply><times/>' + mathml + rest + '</apply>';
+    _parsePostModifiers(term, mathml, precis, offset) {
+        if(precis[term.length] === '^') {
+            var exponent_mathml = this.nodes[offset+term.length].value;
+            term += '^';
+            mathml = '<apply><power/>' + mathml + exponent_mathml +  '</apply>';
         }
+
+        return [term, mathml, precis, offset];
+    }
+
+    /**
+     * We've identified (in `_parse`) that there is a preModifier to apply -
+     * that is, anything before a term which alters it (e.g. 'sin' or 'ln').
+     * Apply the premodifier, make appropriate changes to the arguments, then
+     * pass them back altered.
+     * 
+     * @param  {String} term        The portion of the precis identified as a term
+     * @param  {String} mathml      The mathml rendering of `term`
+     * @param  {String} precis      The full precis being parsed
+     * @param  {Number} offset      The precis' offset within the expression
+     * @param  {String} preModifier The identified preModifier
+     * @return {Array}              The function arguments, altered and returned
+     */
+    _parsePreModifiers(term, mathml, precis, offset, preModifier) {
+        if(['sin', 'cos', 'tan', 'ln'].includes(preModifier)) {
+            mathml = '<apply><' + preModifier + '/>' + mathml + '</apply>';
+        }
+
+        return [term, mathml, precis, offset];
     }
 
     /**
