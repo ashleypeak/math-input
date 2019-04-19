@@ -1,9 +1,10 @@
 import {ExpressionNode, MathNode} from './math-node.js';
 
-const tagname = 'math-input';
-const cursorSpeed = 530;
-const template = document.createElement('template');
-template.innerHTML = `
+const DEBUG = false;
+const TAGNAME = 'math-input';
+const CURSORSPEED = 530;
+const TEMPLATE = document.createElement('template');
+TEMPLATE.innerHTML = `
     <style type='text/css'>
         .wrapper {
             display: inline-flex;
@@ -148,7 +149,7 @@ class MathInput extends HTMLElement {
         super();
 
         this.attachShadow({mode: 'open'});
-        this.shadowRoot.appendChild(template.content.cloneNode(true));
+        this.shadowRoot.appendChild(TEMPLATE.content.cloneNode(true));
         this.wrapper = this.shadowRoot.getElementById('wrapper');
 
         this.rootNode = new ExpressionNode(null);
@@ -162,7 +163,7 @@ class MathInput extends HTMLElement {
             if(self._focused) {
                 self.cursorNode.toggleCursor();
             }
-        }, cursorSpeed);
+        }, CURSORSPEED);
 
         this.addEventListener('keydown', this._keydown);
         this.addEventListener('focus', this._focus);
@@ -362,7 +363,9 @@ class MathInput extends HTMLElement {
             this.wrapper.classList.remove('error');
             this.setAttribute('value', this.rootNode.value);
         } catch(error) {
-            console.error(error);
+            if(DEBUG) {
+                console.error(error);
+            }
 
             this.wrapper.classList.add('error');
             this.setAttribute('value', '');
@@ -370,4 +373,4 @@ class MathInput extends HTMLElement {
     }
 }
 
-customElements.define(tagname, MathInput);
+customElements.define(TAGNAME, MathInput);
