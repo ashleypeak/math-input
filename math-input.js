@@ -88,8 +88,13 @@ template.innerHTML = `
         }
 
         .wrapper .exponent {
-            font-size: 70%;
             margin-left: -5px;
+        }
+
+        .wrapper .exponent .expression {
+            height: 10px;
+            font-size: 10px;
+            line-height: 10px;
         }
 
         .wrapper .square-root {
@@ -100,14 +105,14 @@ template.innerHTML = `
             background-position: center center;
             background-repeat: no-repeat;
             background-size: 100% 100%;
-            background-image: url("data:image/svg+xml;charset=utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' version='1.1' width='210' height='380'><path d='M 188.6875,0 137.875,317.375 58.781256,156.65623 0,186.12498 l 6.625001,12.5 38.687495,-17.75 L 142.1875,380.28125 200.875,14 222.16739,14.0072 V 0.0072474 L 203.125,0 h -10.21874 z' /> </svg>");
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20xmlns%3Axlink%3D%27http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%27%20version%3D%271.1%27%20width%3D%27210%27%20height%3D%27380%27%3E%3Cpath%20d%3D%27M%20188.6875%200%20137.875%20317.375%2058.781256%20156.65623%200%20186.12498%20l%206.625001%2012.5%2038.687495%20-17.75%20L%20142.1875%20380.28125%20200.875%2014%20222.16739%2014.0072%20V%200.0072474%20L%20203.125%200%20h%20-10.21874%20z%27%20%2F%3E%3C%2Fsvg%3E");
         }
 
         .wrapper .square-root .radicand {
             background-position: top left;
             background-repeat: repeat-x;
             background-size: 100% 100%;
-            background-image: url("data:image/svg+xml;charset=utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' version='1.1' width='20' height='380'><path d='M 0,14 20,14 V 0 H 0,0 Z' /></svg>");
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20xmlns%3Axlink%3D%27http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%27%20version%3D%271.1%27%20width%3D%2720%27%20height%3D%27380%27%3E%3Cpath%20d%3D%27M%200%2014%2020%2014%20V%200%20H%200%200%20Z%27%20%2F%3E%3C%2Fsvg%3E");
         }
     </style>
     <div id='wrapper' class='wrapper'>

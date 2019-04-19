@@ -597,7 +597,11 @@ class UnitNode extends MathNode {
      */
     get height() {
         //TODO remove magic number
-        return 17;
+        if(this.parent.parent !== null && (this.parent.parent instanceof ExponentNode)) {
+            return 10;
+        } else {
+            return 17;
+        }
     }
 
     /**
@@ -873,7 +877,11 @@ class DivisionNode extends UnitNode {
      * @return {Number} Element height
      */
     get height() {
-        return this.numerator.height + this.denominator.height + 5;
+        if(this.parent.parent !== null && (this.parent.parent instanceof ExponentNode)) {
+            return (this.numerator.height/1.7) + (this.denominator.height/1.7) + 5;
+        } else {
+            return this.numerator.height + this.denominator.height + 5;
+        }
     }
 
     /**
@@ -1336,13 +1344,34 @@ class ExponentNode extends UnitNode {
     }
 
     /**
-     * Get the center align position of `_element`
-     *
+     * @override
+     * @return {Number} Element height
+     */
+    get height() {
+        //the logic here is:
+        // - this.center() returns the exponent's height - it sits entirely
+        //   above the centreline
+        // - if a parenthesis is typed, I want it to treat it as though
+        //   it extends down to the baseline
+        // - the difference between the exponentNode's baseline and the actual
+        //   baseline is the same as a UnitNode's marginTop (I think, haven't
+        //   done it rigorously but it looks right)
+        // - the only UnitNode that's guaranteed to exist is the StartNode
+        // - so calculate its offset, and add it to the height
+        var maxCenter = this.parent.nodes.reduce((acc, node) => Math.max(acc, node.center), 0)
+        var startCenter = this.parent.startNode.center;
+        var diff = Math.floor(maxCenter - startCenter);
+
+        return this.exponent.height + diff;
+    }
+
+    /**
+     * Lines up bottom of exponent with centreline.
+     * @override
      * @return {Number} Element center
      */
     get center() {
-        //TODO remove magic number
-        return 12;
+        return this.exponent.height;
     }
 
     /**
