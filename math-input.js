@@ -66,6 +66,20 @@ template.innerHTML = `
             padding: 2px 5px 0px 2px;
         }
 
+        .wrapper .parenthesis {
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: 100% 100%;
+        }
+
+        .wrapper .parenthesis-left {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20xmlns%3Axlink%3D%27http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%27%20version%3D%271.1%27%20width%3D%2725%27%20height%3D%27100%27%20viewBox%3D%270%200%2023.671175%2093.999996%27%3E%3Cg%20transform%3D%27matrix(-5.564574%2C0%2C0%2C5.564574%2C30.768631%2C-73.23996)%27%3E%3Cpath%20d%3D%27M%202.4092605%2030.054405%20C%203.2823107%2028.95284%204.0205912%2027.663779%204.6241042%2026.187218%205.2276212%2024.710657%205.5293787%2023.181361%205.5293776%2021.599327%205.5293787%2020.204802%205.303793%2018.868866%204.8526198%2017.591515%204.3252784%2016.109103%203.5108261%2014.632542%202.4092605%2013.161827%20H%201.2754714%20c%200.708989%201.218762%201.1777385%202.088878%201.40625%202.610352%200.3574254%200.808603%200.6386752%201.652352%200.84375%202.53125%200.251956%201.09571%200.3779324%202.197271%200.3779297%203.304687%202.7e-6%202.818361%20-0.875973%205.633788%20-2.6279297%208.446289%20z%27%20%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+        }
+
+        .wrapper .parenthesis-right {
+            background-image: url("data:image/svg+xml;charset=utf8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20xmlns%3Axlink%3D%27http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink%27%20version%3D%271.1%27%20width%3D%2725%27%20height%3D%27100%27%20viewBox%3D%270%200%2023.671175%2093.999996%27%3E%3Cg%20transform%3D%27matrix(5.564574%200%200%205.564574%20-7.0974548%20-73.23996)%27%3E%3Cpath%20d%3D%27M%202.4092605%2030.054405%20C%203.2823107%2028.95284%204.0205912%2027.663779%204.6241042%2026.187218%205.2276212%2024.710657%205.5293787%2023.181361%205.5293776%2021.599327%205.5293787%2020.204802%205.303793%2018.868866%204.8526198%2017.591515%204.3252784%2016.109103%203.5108261%2014.632542%202.4092605%2013.161827%20H%201.2754714%20c%200.708989%201.218762%201.1777385%202.088878%201.40625%202.610352%200.3574254%200.808603%200.6386752%201.652352%200.84375%202.53125%200.251956%201.09571%200.3779324%202.197271%200.3779297%203.304687%202.7e-6%202.818361%20-0.875973%205.633788%20-2.6279297%208.446289%20z%27%20%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+        }
+
         .wrapper .pipe .pipe-display {
             height: 100%;
             width: 1px;
@@ -75,10 +89,25 @@ template.innerHTML = `
 
         .wrapper .exponent {
             font-size: 70%;
-            margin-left:-5px;
+            margin-left: -5px;
         }
 
-        .wrapper .exponent-inner {
+        .wrapper .square-root {
+            display: flex;
+        }
+
+        .wrapper .square-root .radix {
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-size: 100% 100%;
+            background-image: url("data:image/svg+xml;charset=utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' version='1.1' width='210' height='380'><path d='M 188.6875,0 137.875,317.375 58.781256,156.65623 0,186.12498 l 6.625001,12.5 38.687495,-17.75 L 142.1875,380.28125 200.875,14 222.16739,14.0072 V 0.0072474 L 203.125,0 h -10.21874 z' /> </svg>");
+        }
+
+        .wrapper .square-root .radicand {
+            background-position: top left;
+            background-repeat: repeat-x;
+            background-size: 100% 100%;
+            background-image: url("data:image/svg+xml;charset=utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' version='1.1' width='20' height='380'><path d='M 0,14 20,14 V 0 H 0,0 Z' /></svg>");
         }
     </style>
     <div id='wrapper' class='wrapper'>
@@ -117,9 +146,9 @@ class MathInput extends HTMLElement {
             }
         }, cursorSpeed);
 
-        this.addEventListener('keydown', this.keydown);
-        this.addEventListener('focus', this.focus);
-        this.addEventListener('blur', this.blur);
+        this.addEventListener('keydown', this._keydown);
+        this.addEventListener('focus', this._focus);
+        this.addEventListener('blur', this._blur);
     }
 
 
@@ -151,7 +180,13 @@ class MathInput extends HTMLElement {
      */
     attributeChangedCallback(name, old, value) {
         if(this._connected) {
-            this.getElementsByClassName('real-input')[0].value = value;
+            if(name === 'value') {
+                this.getElementsByClassName('real-input')[0].value = value;
+            } else if(name === 'insert' && value !== '') {
+                this.insertNodeByName(value);
+
+                this.setAttribute('insert', '');
+            }
         }
     }
 
@@ -162,7 +197,7 @@ class MathInput extends HTMLElement {
      * @return {array} The list of attributes to watch
      */
     static get observedAttributes() {
-        return ['value'];
+        return ['value', 'insert'];
     }
 
 
@@ -174,19 +209,22 @@ class MathInput extends HTMLElement {
      * 
      * @param  {Event} e JavaScript Event object
      */
-    keydown(e) {
+    _keydown(e) {
         if(e.ctrlKey)   //don't capture control combinations
             return;
 
-        var character = e.key || e.keyCode;
-        if(/^[a-zA-Z0-9.+\-*()|,='<>~]$/.test(character)) {
+        var char = e.key || e.keyCode;
+        if(/^[a-zA-Z0-9.+\-*()|,='<>~]$/.test(char)) {
             e.preventDefault();
-            this.insert(character);
+
+            var node = MathNode.buildFromCharacter(char)
+            this.insert(node);
         }
 
-        if(character == '/') {
+        if(char == '/') {
             e.preventDefault();
-            var node = this.insert(character);
+            var node = MathNode.buildFromCharacter(char)
+            this.insert(node);
 
             var collected = node.collectNumerator();
             if(collected) {
@@ -196,30 +234,32 @@ class MathInput extends HTMLElement {
             }
         }
 
-        if(character == '^') {
+        if(char == '^') {
             e.preventDefault();
-            var node = this.insert(character);
+            var node = MathNode.buildFromCharacter(char)
+            this.insert(node);
+
             this.cursorNode = node.exponent.startNode;
         }
 
 
-        if(character == 'ArrowLeft') {
+        if(char == 'ArrowLeft') {
             this.cursorNode = this.cursorNode.nodeLeft();
         }
 
-        if(character == 'ArrowRight') {
+        if(char == 'ArrowRight') {
             this.cursorNode = this.cursorNode.nodeRight();
         }
 
-        if(character == 'ArrowUp') {
+        if(char == 'ArrowUp') {
             this.cursorNode = this.cursorNode.nodeUp();
         }
 
-        if(character == 'ArrowDown') {
+        if(char == 'ArrowDown') {
             this.cursorNode = this.cursorNode.nodeDown();
         }
 
-        if(character == 'Backspace') {
+        if(char == 'Backspace') {
             var newCursor = this.cursorNode.previousSibling;
 
             if(newCursor !== null) {
@@ -235,7 +275,7 @@ class MathInput extends HTMLElement {
     /**
      * OnFocus, start the cursor flashing
      */
-    focus() {
+    _focus() {
         this._focused = true;
         this.cursorNode.toggleCursor(true);
     }
@@ -243,7 +283,7 @@ class MathInput extends HTMLElement {
     /**
      * OnBlur, stop the cursor flashing
      */
-    blur() {
+    _blur() {
         this._focused = false;
         this.cursorNode.toggleCursor(false);
     }
@@ -274,21 +314,28 @@ class MathInput extends HTMLElement {
 
     /** MISCELLANEOUS (CHANGE WHEN THERE'S MORE STRUCTURE) */
 
+    insertNodeByName(name) {
+        var node = MathNode.buildFromName(name);
+        this.insert(node);
+
+        if(name == 'sqrt') {
+            this.cursorNode = node.radicand.startNode;
+        }
+
+        this.focus();
+    }
+
     /**
-     * Insert a character at the cursor position.
+     * Insert a node at the cursor position.
      * 
-     * @param  {string} char The character to insert as a new node
-     * @return {MathNode} The created node
+     * @param  {MathNode} node The node to insert
      */
-    insert(char) {
-        var node = MathNode.buildFromCharacter(char);
+    insert(node) {
         this.cursorNode.insertAfter(node);
         this.cursorNode = node;
 
         this.updateValue();
         this.cursorNode.parent.redraw();
-
-        return node;
     }
 
     /**

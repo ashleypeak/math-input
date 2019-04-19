@@ -185,6 +185,14 @@ class MathNode {
             throw new Error('Not yet implemented: ' + char);
         }
     }
+
+    static buildFromName(name) {
+        if(name == 'sqrt') {
+            return new SquareRootNode();
+        } else {
+            throw new Error('Not implemented: ' + name);
+        }
+    }
 }
 
 
@@ -1036,8 +1044,13 @@ class BracketNode extends UnitNode {
     constructor(char, parent=null) {
         super(parent);
         this._char = char;
-        this._element.classList.add('bracket');
-        this._element.innerHTML = this.displayChar;
+        this._element.classList.add('parenthesis');
+
+        if(char === '(') {
+            this._element.classList.add('parenthesis-left');
+        } else if(char === ')') {
+            this._element.classList.add('parenthesis-right');
+        }
     }
 
     /**
@@ -1067,13 +1080,9 @@ class BracketNode extends UnitNode {
         var innerParams = nodeParams.slice(start+1, end);
         //note this.height refers to default height, not css height
         var maxInnerHeight = innerParams.reduce((acc, node) => Math.max(acc, node.height), this.height)
-        var heightStr = maxInnerHeight.toString() + 'px';
 
-        this._element.style.height = heightStr;
-
-        var svg = this._element.getElementsByTagName('svg')[0];
-        svg.style.height = heightStr;
-        svg.style.width = (maxInnerHeight/4).toString() + 'px';
+        this._element.style.height = maxInnerHeight.toString() + 'px';
+        this._element.style.width = (maxInnerHeight / 8).toString() + 'px';
 
         //because brackets grow with contents, we only want marginTop to
         //increase if there are larger elements outside
@@ -1089,29 +1098,6 @@ class BracketNode extends UnitNode {
      */
     get precis() {
         return this._char;
-    }
-
-    /**
-     * Returns the character which should be displayed in the input field.
-     * 
-     * @return {String} The character to be displayed
-     */
-    get displayChar() {
-        if(this._char == '(') {
-            return `
-                <svg style='width:25px;height:100px;' viewBox="0 0 23.671175 93.999996">
-                <g transform="matrix(-5.564574,0,0,5.564574,30.768631,-73.23996)">
-                  <path d="M 2.4092605,30.054405 C 3.2823107,28.95284 4.0205912,27.663779 4.6241042,26.187218 5.2276212,24.710657 5.5293787,23.181361 5.5293776,21.599327 5.5293787,20.204802 5.303793,18.868866 4.8526198,17.591515 4.3252784,16.109103 3.5108261,14.632542 2.4092605,13.161827 H 1.2754714 c 0.708989,1.218762 1.1777385,2.088878 1.40625,2.610352 0.3574254,0.808603 0.6386752,1.652352 0.84375,2.53125 0.251956,1.09571 0.3779324,2.197271 0.3779297,3.304687 2.7e-6,2.818361 -0.875973,5.633788 -2.6279297,8.446289 z" /></g></svg>
-                `;
-        } else if(this._char == ')') {
-            return `
-                <svg style='width:25px;height:100px;' viewBox="0 0 23.671175 93.999996">
-                <g transform="matrix(5.564574,0,0,5.564574,-7.0974548,-73.23996)">
-                  <path d="M 2.4092605,30.054405 C 3.2823107,28.95284 4.0205912,27.663779 4.6241042,26.187218 5.2276212,24.710657 5.5293787,23.181361 5.5293776,21.599327 5.5293787,20.204802 5.303793,18.868866 4.8526198,17.591515 4.3252784,16.109103 3.5108261,14.632542 2.4092605,13.161827 H 1.2754714 c 0.708989,1.218762 1.1777385,2.088878 1.40625,2.610352 0.3574254,0.808603 0.6386752,1.652352 0.84375,2.53125 0.251956,1.09571 0.3779324,2.197271 0.3779297,3.304687 2.7e-6,2.818361 -0.875973,5.633788 -2.6279297,8.446289 z" /></g></svg>
-                `;
-        } else  {
-            return this._char;
-        }
     }
 
     /**
@@ -1385,14 +1371,20 @@ class ExponentNode extends UnitNode {
         return this.exponent.startNode;
     }
 
+
+    /**
+     * Returns a MathML string representing the ExponentNode.
+     * 
+     * @return {String} The MathML string representing this element
+     */
     get value() {
         return this.exponent.value;
     }
 
     /**
      * When moving left from an ExponentNode (i.e. cursor is right of the
-     * exponent), move into the end of the exponent rather than to the
-     * sibling node to the left.
+     * entire ExponentNode), move into the end of the exponent rather than to
+     * the sibling node to the left.
      *
      * @override
      * @return {MathNode} The new cursor node
@@ -1402,7 +1394,7 @@ class ExponentNode extends UnitNode {
      }
 
     /**
-     * Called from exponent, return node to the left.
+     * Called from inside the exponent, return node to the left.
      *
      * @override
      * @return {MathNode} The new cursor node
@@ -1412,9 +1404,138 @@ class ExponentNode extends UnitNode {
     }
 
     /**
-     * Called from exponent, return node to the right, which for cursor
-     * purposes is the ExponentNode itself.
-     * right. In both cases, return the DivisionNode itself.
+     * Called from inside the exponent, return node to the right, which for
+     * cursor purposes is the ExponentNode itself.
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    childRight(node, defaultNode) {
+        return this;
+    }
+}
+
+
+class SquareRootNode extends UnitNode {
+    /**
+     * @constructs
+     */
+    constructor(char, parent=null) {
+        super(parent);
+        this._element.classList.add('square-root');
+
+        this._radix = document.createElement('div');
+        this._radix.classList.add('radix');
+        this._element.appendChild(this.radix);
+
+        this._radicand = new ExpressionNode(this);
+        this._radicand.element.classList.add('radicand');
+        this._element.appendChild(this.radicand.element);
+    }
+
+    /**
+     * Given `nodeParams`, dimensions of all other nodes in the expression,
+     * redraw this node to line up.
+     * 
+     * @param  {Array} nodeParams The dimensions of all nodes in the element;
+     */
+    redraw(nodeParams) {
+        var maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
+        var diff = Math.floor(maxCenter - this.center);
+        this._element.style.marginTop = diff.toString() + 'px';
+
+        var heightString = this.height.toString() + 'px';
+        this._radix.style.height = heightString;
+        //numbers are just the width:height ratio of the radix graphic
+        this._radix.style.width = ((this.height*21)/38).toString() + '10px';
+        this._radicand.element.style.height = heightString;
+    }
+
+    /**
+     * @override
+     * @return {Number} Element height
+     */
+    get height() {
+        return this.radicand.height;
+    }
+
+    /**
+     * @override
+     * @return {Number} Element center
+     */
+    get center() {
+        return this.radicand.height / 2;
+    }
+
+    /**
+     * Get radix
+     * @return {MathNode} Numerator
+     */
+    get radix() {
+        return this._radix;
+    }
+
+    /**
+     * Get radicand
+     * @return {MathNode} Numerator
+     */
+    get radicand() {
+        return this._radicand;
+    }
+
+    /**
+     * @override
+     * @return {String} The node precis
+     */
+    get precis() {
+        return '%';
+    }
+
+    /**
+     * If the cursor's coming in from the left, where should it go?
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    get cursorNodeFromLeft() {
+        return this.radicand.startNode;
+    }
+
+
+    /**
+     * Returns a MathML string representing the SquareRootNode.
+     * 
+     * @return {String} The MathML string representing this element
+     */
+    get value() {
+        return '<apply><root/><degree><ci>2</ci></degree>' + this.radicand.value + '</apply>';
+    }
+
+    /**
+     * When moving left from an SquareRootNode (i.e. cursor is right of the
+     * root), move into the end of the radicand rather than to the
+     * sibling node to the left.
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+     nodeLeft(defaultNode) {
+        return this.radicand.endNode;
+     }
+
+    /**
+     * Called from radicand, return node to the left.
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    childLeft(node, defaultNode) {
+        return this.parent.childLeft(this, defaultNode);
+    }
+
+    /**
+     * Called from radicand, return node to the right, which for cursor
+     * purposes is the SquareRootNode itself.
      *
      * @override
      * @return {MathNode} The new cursor node
