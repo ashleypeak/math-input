@@ -42,13 +42,6 @@ template.innerHTML = `
         .wrapper .atom {
         }
 
-        .wrapper .pipe .pipe-display {
-            height: 100%;
-            width: 1px;
-            background-color: #000000;
-            margin-left: 1px;
-        }
-
         .wrapper .division {
             display: flex;
             flex-direction: column;
@@ -71,6 +64,21 @@ template.innerHTML = `
         .wrapper .denominator {
             border-top: 1px solid;
             padding: 2px 5px 0px 2px;
+        }
+
+        .wrapper .pipe .pipe-display {
+            height: 100%;
+            width: 1px;
+            background-color: #000000;
+            margin-left: 1px;
+        }
+
+        .wrapper .exponent {
+            font-size: 70%;
+            margin-left:-5px;
+        }
+
+        .wrapper .exponent-inner {
         }
     </style>
     <div id='wrapper' class='wrapper'>
@@ -171,7 +179,7 @@ class MathInput extends HTMLElement {
             return;
 
         var character = e.key || e.keyCode;
-        if(/^[a-zA-Z0-9.+\-*()\^|,='<>~]$/.test(character)) {
+        if(/^[a-zA-Z0-9.+\-*()|,='<>~]$/.test(character)) {
             e.preventDefault();
             this.insert(character);
         }
@@ -186,6 +194,12 @@ class MathInput extends HTMLElement {
             } else {
                 this.cursorNode = node.numerator.endNode;
             }
+        }
+
+        if(character == '^') {
+            e.preventDefault();
+            var node = this.insert(character);
+            this.cursorNode = node.exponent.startNode;
         }
 
 

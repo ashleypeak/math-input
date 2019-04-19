@@ -106,6 +106,34 @@ class MathNode {
      }
 
     /**
+     * From denominator, provide numerator. Otherwise pass it up the chain.
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    childUp(node, defaultNode) {
+        if(node == this.denominator) {
+            return this.numerator.startNode.cursorNodeFromBelow;
+        } else {
+            return this.parent.childUp(this, defaultNode);
+        }
+    }
+
+    /**
+     * From numerator, provide denominator. Otherwise pass it up the chain.
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    childDown(node, defaultNode) {
+        if(node == this.numerator) {
+            return this.denominator.startNode.cursorNodeFromAbove;
+        } else {
+            return this.parent.childDown(this, defaultNode);
+        }
+    }
+
+    /**
      * Insert the node `node` after `this`.
      * 
      * @param  {MathNode} node The node to be inserted
@@ -151,6 +179,8 @@ class MathNode {
             return new BracketNode(char);
         } else if(/^\|$/.test(char)) {
             return new AbsoluteNode();
+        } else if(/^\^$/.test(char)) {
+            return new ExponentNode();
         } else {
             throw new Error('Not yet implemented: ' + char);
         }
@@ -307,7 +337,7 @@ class ExpressionNode extends MathNode {
             var term = precis.match(/^[0-9]+(\.[0-9]+)?/)[0];
             var mathml = '<cn>' + term + '</cn>';
 
-            return this._termOrImplicitTimes(term, mathml, precis, offset);
+            return this._parseTerm(term, mathml, precis, offset);
         }
 
         //if it starts with a letter
@@ -316,15 +346,15 @@ class ExpressionNode extends MathNode {
             var term = precis[0];
             var mathml = '<ci>' + term + '</ci>';
 
-            return this._termOrImplicitTimes(term, mathml, precis, offset);
+            return this._parseTerm(term, mathml, precis, offset);
         }
 
-        //if it starts with a % i.e. is a non-Atom UnitNode
+        //if it starts with a % i.e. is a non-Atom, non-Exponent UnitNode
         if(/^%/.test(precis)) {
             var term = precis[0];
             var mathml = this.nodes[offset].value;
 
-            return this._termOrImplicitTimes(term, mathml, precis, offset);
+            return this._parseTerm(term, mathml, precis, offset);
         }
 
         //if it starts with a parenthesis
@@ -339,7 +369,7 @@ class ExpressionNode extends MathNode {
             var term = precis.slice(0, end + 1);
             var mathml = this._parse(term.slice(1, -1), offset + 1);
 
-            return this._termOrImplicitTimes(term, mathml, precis, offset);
+            return this._parseTerm(term, mathml, precis, offset);
         }
 
         //if it starts with a pipe
@@ -354,7 +384,7 @@ class ExpressionNode extends MathNode {
             var innerMathml = this._parse(term.slice(1, -1), offset + 1);
             var mathml = '<apply><abs/>' + innerMathml + '</apply>';
 
-            return this._termOrImplicitTimes(term, mathml, precis, offset);
+            return this._parseTerm(term, mathml, precis, offset);
         }
 
         //if no match has been found
@@ -362,8 +392,7 @@ class ExpressionNode extends MathNode {
     }
 
     /**
-     * Utility function to save repitition. Given a `term`, a matched section
-     * at the start of a precis:
+     * Given a `term`, a matched section at the start of a precis:
      *  - if it comprises the entire precis, return it's calculated `mathml`
      *  - otherwise, parse the rest and multiply them together
      *  
@@ -373,10 +402,23 @@ class ExpressionNode extends MathNode {
      * @param  {Number} offset The precis' offset within the expression
      * @return {String}        The resultant mathml term
      */
-    _termOrImplicitTimes(term, mathml, precis, offset) {
+    _parseTerm(term, mathml, precis, offset) {
         if(term.length == precis.length) {
             return mathml;
         } else {
+            if(precis[term.length] === '^') {
+                var exponent_mathml = this.nodes[offset+term.length].value;
+                mathml = '<apply><power/>' + mathml + exponent_mathml +  '</apply>';
+
+                //fudge so that the rest of the function will parse starting
+                //after the ExponentNode.
+                term += '^';
+
+                if(term.length == precis.length) {
+                    return mathml;
+                }
+            }
+
             var newOffset = offset + term.length;
             var rest = this._parse(precis.slice(term.length), newOffset);
 
@@ -562,9 +604,11 @@ class UnitNode extends MathNode {
 
     /**
      * Get a single character representation of a UnitNode to allow for parsing.
-     * AtomNodes return their character, ExpressionNodes return '_',
-     * everything else returns '%', indicating that it will provide its own
-     * value using UnitNode.value
+     * AtomNodes return their character, StartNode returns '_', ExponentNode
+     * returns '^', everything else returns '%', indicating that it will
+     * provide its own value using UnitNode.value
+     * (ExponentNode has a different term because it can't be processed as a
+     * unit - it needs to know what term preceded it.)
      *
      * @abstract
      * @return {String} The string to go in the value attribute
@@ -708,6 +752,28 @@ class UnitNode extends MathNode {
      }
 
     /**
+     * Since most elements are only on one level, default behaviour is to pass
+     * it up the chain (till it hits a division, probably.)
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    childUp(node, defaultNode) {
+        return this.parent.childUp(this, defaultNode);
+    }
+
+    /**
+     * Since most elements are only on one level, default behaviour is to pass
+     * it up the chain (till it hits a division, probably.)
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    childDown(node, defaultNode) {
+        return this.parent.childDown(this, defaultNode);
+    }
+
+    /**
      * Delete this node
      */
     delete() {
@@ -771,6 +837,193 @@ class AtomNode extends UnitNode {
             return '&times;';
         } else {
             return this._char;
+        }
+    }
+}
+
+
+class DivisionNode extends UnitNode {
+    /**
+     * @constructs
+     */
+    constructor(parent=null) {
+        super(parent);
+        this._element.classList.add('division');
+
+        this._numerator = new ExpressionNode(this);
+        this._numerator.element.classList.add('numerator');
+
+        this._denominator = new ExpressionNode(this);
+        this._denominator.element.classList.add('denominator');
+
+        this._element.appendChild(this._numerator.element);
+        this._element.appendChild(this._denominator.element);
+    }
+
+    /**
+     * @override
+     * @return {Number} Element height
+     */
+    get height() {
+        return this.numerator.height + this.denominator.height + 5;
+    }
+
+    /**
+     * @override
+     * @return {Number} Element center
+     */
+    get center() {
+        return this.numerator.height + 3;
+    }
+
+    /**
+     * @override
+     * @return {String} The node precis
+     */
+    get precis() {
+        return '%';
+    }
+
+    /**
+     * Get numerator
+     * @return {MathNode} Numerator
+     */
+    get numerator() {
+        return this._numerator;
+    }
+
+    /**
+     * Get denominator
+     * @return {MathNode} Denominator
+     */
+    get denominator() {
+        return this._denominator;
+    }
+
+    /**
+     * If the cursor's coming in from the left, where should it go?
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    get cursorNodeFromLeft() {
+        return this.numerator.startNode;
+    }
+
+    /**
+     * Returns a MathML string representing the DivisionNode.
+     * 
+     * @return {String} The MathML string representing this element
+     */
+    get value() {
+        return '<apply><divide/>' + this.numerator.value + this.denominator.value + '</apply>';
+    }
+
+    /**
+     * When creating a DivisionNode, should any previously typed elements be
+     * moved into the numerator? The decision is largely arbitrary, just trying
+     * to match expected behaviour i.e. if I type '1/2' I expect to get a
+     * fraction of one on two.
+     *
+     * Returns true if elements are collected, false otherwise. Used to
+     * determine where to put the cursor.
+     * 
+     * @return {Boolean} Were any elements added to numerator?
+     */
+    collectNumerator() {
+        var precis = '';
+        var node = this.previousSibling;
+        do {
+            precis = node.precis + precis;
+        } while(node = node.previousSibling)
+
+        //match everything that should move to numerator, fairly arbitrary
+        var match = precis.match(/[a-zA-Z0-9]+$/);
+        if(match !== null) {
+            for(var i = 0; i < match[0].length; i++) {
+                this.numerator.startNode.insertAfter(this.previousSibling);
+            }
+
+            return true;
+        }
+
+        match = precis.match(/\)$/);
+        if(match !== null) {
+            var start = BracketNode.findMatchingParen(precis, precis.length-1);
+            if(start === null) {
+                start = 0;
+            }
+
+            var count = precis.length - start;
+            for(var i = 0; i < count; i++) {
+                this.numerator.startNode.insertAfter(this.previousSibling);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * When moving left from a DivisionNode (i.e. cursor is right of the
+     * division), move into the end of the numerator rather than to the
+     * sibling node to the left.
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+     nodeLeft(defaultNode) {
+        return this.numerator.endNode;
+     }
+
+    /**
+     * Called from either the numerator or denominator, return node to the
+     * left. In both cases, return the node left of DivisionNode in parent.
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    childLeft(node, defaultNode) {
+        return this.parent.childLeft(this, defaultNode);
+    }
+
+    /**
+     * Called from either the numerator or denominator, return node to the
+     * right. In both cases, return the DivisionNode itself.
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    childRight(node, defaultNode) {
+        return this;
+    }
+
+    /**
+     * From denominator, provide numerator. Otherwise pass it up the chain.
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    childUp(node, defaultNode) {
+        if(node == this.denominator) {
+            return this.numerator.startNode.cursorNodeFromBelow;
+        } else {
+            return this.parent.childUp(this, defaultNode);
+        }
+    }
+
+    /**
+     * From numerator, provide denominator. Otherwise pass it up the chain.
+     *
+     * @override
+     * @return {MathNode} The new cursor node
+     */
+    childDown(node, defaultNode) {
+        if(node == this.numerator) {
+            return this.denominator.startNode.cursorNodeFromAbove;
+        } else {
+            return this.parent.childDown(this, defaultNode);
         }
     }
 }
@@ -1083,38 +1336,35 @@ class AbsoluteNode extends UnitNode {
 }
 
 
-class DivisionNode extends UnitNode {
+class ExponentNode extends UnitNode {
     /**
      * @constructs
      */
-    constructor(parent=null) {
+    constructor(char, parent=null) {
         super(parent);
-        this._element.classList.add('division');
+        this._element.classList.add('exponent');
 
-        this._numerator = new ExpressionNode(this);
-        this._numerator.element.classList.add('numerator');
-
-        this._denominator = new ExpressionNode(this);
-        this._denominator.element.classList.add('denominator');
-
-        this._element.appendChild(this._numerator.element);
-        this._element.appendChild(this._denominator.element);
+        this._exponent = new ExpressionNode(this);
+        this._exponent.element.classList.add('exponent-inner');
+        this._element.appendChild(this.exponent.element);
     }
 
     /**
-     * @override
-     * @return {Number} Element height
-     */
-    get height() {
-        return this.numerator.height + this.denominator.height + 5;
-    }
-
-    /**
-     * @override
+     * Get the center align position of `_element`
+     *
      * @return {Number} Element center
      */
     get center() {
-        return this.numerator.height + 3;
+        //TODO remove magic number
+        return 12;
+    }
+
+    /**
+     * Get exponent
+     * @return {MathNode} Numerator
+     */
+    get exponent() {
+        return this._exponent;
     }
 
     /**
@@ -1122,23 +1372,7 @@ class DivisionNode extends UnitNode {
      * @return {String} The node precis
      */
     get precis() {
-        return '%';
-    }
-
-    /**
-     * Get numerator
-     * @return {MathNode} Numerator
-     */
-    get numerator() {
-        return this._numerator;
-    }
-
-    /**
-     * Get denominator
-     * @return {MathNode} Denominator
-     */
-    get denominator() {
-        return this._denominator;
+        return '^';
     }
 
     /**
@@ -1148,74 +1382,27 @@ class DivisionNode extends UnitNode {
      * @return {MathNode} The new cursor node
      */
     get cursorNodeFromLeft() {
-        return this.numerator.startNode;
+        return this.exponent.startNode;
     }
 
     get value() {
-        return '<apply><divide/>' + this.numerator.value + this.denominator.value + '</apply>';
+        return this.exponent.value;
     }
 
     /**
-     * When creating a DivisionNode, should any previously typed elements be
-     * moved into the numerator? The decision is largely arbitrary, just trying
-     * to match expected behaviour i.e. if I type '1/2' I expect to get a
-     * fraction of one on two.
-     *
-     * Returns true if elements are collected, false otherwise. Used to
-     * determine where to put the cursor.
-     * 
-     * @return {Boolean} Were any elements added to numerator?
-     */
-    collectNumerator() {
-        var precis = '';
-        var node = this.previousSibling;
-        do {
-            precis = node.precis + precis;
-        } while(node = node.previousSibling)
-
-        //match everything that should move to numerator, fairly arbitrary
-        var match = precis.match(/[a-zA-Z0-9]+$/);
-        if(match !== null) {
-            for(var i = 0; i < match[0].length; i++) {
-                this.numerator.startNode.insertAfter(this.previousSibling);
-            }
-
-            return true;
-        }
-
-        match = precis.match(/\)$/);
-        if(match !== null) {
-            var start = BracketNode.findMatchingParen(precis, precis.length-1);
-            if(start === null) {
-                start = 0;
-            }
-
-            var count = precis.length - start;
-            for(var i = 0; i < count; i++) {
-                this.numerator.startNode.insertAfter(this.previousSibling);
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * When moving left from a DivisionNode (i.e. cursor is right of the
-     * division), move into the end of the numerator rather than to the
+     * When moving left from an ExponentNode (i.e. cursor is right of the
+     * exponent), move into the end of the exponent rather than to the
      * sibling node to the left.
      *
      * @override
      * @return {MathNode} The new cursor node
      */
      nodeLeft(defaultNode) {
-        return this.numerator.endNode;
+        return this.exponent.endNode;
      }
 
     /**
-     * Called from either the numerator or denominator, return node to the
-     * left. In both cases, return the node left of DivisionNode in parent.
+     * Called from exponent, return node to the left.
      *
      * @override
      * @return {MathNode} The new cursor node
@@ -1225,7 +1412,8 @@ class DivisionNode extends UnitNode {
     }
 
     /**
-     * Called from either the numerator or denominator, return node to the
+     * Called from exponent, return node to the right, which for cursor
+     * purposes is the ExponentNode itself.
      * right. In both cases, return the DivisionNode itself.
      *
      * @override
@@ -1233,34 +1421,6 @@ class DivisionNode extends UnitNode {
      */
     childRight(node, defaultNode) {
         return this;
-    }
-
-    /**
-     * From denominator, provide numerator. Otherwise pass it up the chain.
-     *
-     * @override
-     * @return {MathNode} The new cursor node
-     */
-    childUp(node, defaultNode) {
-        if(node == this.denominator) {
-            return this.numerator.startNode.cursorNodeFromBelow;
-        } else {
-            return this.parent.childUp(this, defaultNode);
-        }
-    }
-
-    /**
-     * From numerator, provide denominator. Otherwise pass it up the chain.
-     *
-     * @override
-     * @return {MathNode} The new cursor node
-     */
-    childDown(node, defaultNode) {
-        if(node == this.numerator) {
-            return this.denominator.startNode.cursorNodeFromAbove;
-        } else {
-            return this.parent.childDown(this, defaultNode);
-        }
     }
 }
 
