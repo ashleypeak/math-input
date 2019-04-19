@@ -80,9 +80,14 @@ class MathNode {
         if(this.parent === null) {
             var oldCursor = this._cursor;
             this._cursor = node;
+            node.element.classList.add('cursor');
 
             if(typeof oldCursor !== 'undefined') {
                 oldCursor.toggleCursor(false);
+
+                if(oldCursor !== node) {
+                    oldCursor.element.classList.remove('cursor');
+                }
 
                 //this is kind of hacky, but I don't want the cursor on when
                 //the element is unfocused, and the only time the cursor is
@@ -194,7 +199,7 @@ class MathNode {
      * @param  {Boolean} force override toggle, see classList.toggle docs
      */
     toggleCursor(force) {
-        this._element.classList.toggle('cursor', force)
+        this._element.classList.toggle('cursor-visible', force)
     }
 
 
@@ -1406,7 +1411,7 @@ class ExponentNode extends UnitNode {
         var startCenter = this.parent.startNode.center;
         var diff = startCenter;
 
-        return this.exponent.height + diff;
+        return Math.max(this.exponent.height, 17) + diff;
     }
 
     /**
@@ -1415,7 +1420,11 @@ class ExponentNode extends UnitNode {
      * @return {Number} Element center
      */
     get center() {
-        return this.exponent.height;
+        //TODO get rid of magic number. I don't know why it's necessary, but it
+        //doesn't sit on the centreline without it. (In fairness it sits
+        //considerably above the centreline with it, but it looks good and
+        //should be kept there.)
+        return Math.max(this.exponent.height, 17);
     }
 
     /**

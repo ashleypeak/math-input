@@ -37,7 +37,7 @@ template.innerHTML = `
             height: 17px;
         }
 
-        .wrapper .unit.cursor {
+        .wrapper .unit.cursor-visible {
             padding-right: 0px;
             border-right: 1px solid;
         }
@@ -48,7 +48,7 @@ template.innerHTML = `
             padding: 0px 2px;
         }
 
-        .wrapper .division.cursor {
+        .wrapper .division.cursor-visible {
             padding: 0px 1px 0px 2px;
         }
 
@@ -88,13 +88,23 @@ template.innerHTML = `
         }
 
         .wrapper .exponent {
-            margin-left: -5px;
+            margin-left: -2px;
+        }
+
+        .wrapper .exponent .start:not(.cursor):only-child {
+            background-color: #d9edf7;
+            border: 1px solid #31708f;
+            width:5px;
         }
 
         .wrapper .exponent .expression {
             height: 10px;
             font-size: 10px;
             line-height: 10px;
+        }
+
+        .wrapper .exponent .start {
+            height: 10px;
         }
 
         .wrapper .square-root {
