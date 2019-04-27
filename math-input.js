@@ -258,22 +258,27 @@ class MathInput extends HTMLElement {
 
 
         if(char == 'ArrowLeft') {
+            e.preventDefault();
             this.cursorNode = this.cursorNode.nodeLeft();
         }
 
         if(char == 'ArrowRight') {
+            e.preventDefault();
             this.cursorNode = this.cursorNode.nodeRight();
         }
 
         if(char == 'ArrowUp') {
+            e.preventDefault();
             this.cursorNode = this.cursorNode.nodeUp();
         }
 
         if(char == 'ArrowDown') {
+            e.preventDefault();
             this.cursorNode = this.cursorNode.nodeDown();
         }
 
         if(char == 'Backspace') {
+            e.preventDefault();
             var newCursor = this.cursorNode.previousSibling;
 
             if(newCursor !== null) {
