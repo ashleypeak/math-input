@@ -800,9 +800,16 @@ class ExpressionNode extends MathNode {
             return this._parse(precis.slice(len), offset+len, term);
         }
 
+        //if it starts with pi
+        if(/^pi/.test(precis)) {
+            var term = precis.slice(0, 2);
+            var mathml = '<pi/>';
+
+            return this._parseTerm(term, mathml, precis, offset, preModifier);
+        }
+
         //if it starts with a letter
         if(/^[a-zA-Z]/.test(precis)) {
-            //TODO add support for multicharacter terms like `sin`
             var term = precis[0];
             var mathml = '<ci>' + term + '</ci>';
 
