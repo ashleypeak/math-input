@@ -32,9 +32,21 @@ The field will accept the following characters as input:
 
 `[a-zA-Z0-9α-ωΑ-Ω.+\-*\/()\|^]`
 
-It will also accept the following elements, which can't be easily typed:
+Most of the letters will be parsed as individual unknowns. Typing `xy`, for instance, will be interpreted as 'x times y'. There are, however, a few exceptions:
 
-| Element     | Symbol| 
+| Input | Interpretation |
+| `e`   | Euler's number |
+| `π`   | The constant π ≈ 3.142 |
+| `pi`  | The constant π ≈ 3.142 |
+| `sin` | The sine function |
+| `cos` | The cosine function |
+| `tan` | The tangent function |
+
+### Input Buttons
+
+The field will also accept the following elements, which can't be easily typed:
+
+| Element     | Symbol | 
 | ----------- | ------ |
 | Square root | `sqrt` |
 | π           | `pi`   |
