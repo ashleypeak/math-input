@@ -203,7 +203,15 @@ class MathInput extends HTMLElement {
             if(name === 'value') {
                 this.getElementsByClassName('real-input')[0].value = value;
             } else if(name === 'insert' && value !== '') {
-                this.insertNodeByName(value);
+                try {
+                    this.insertNodeByCharacter(value);
+                } catch {
+                    try {
+                        this.insertNodeByName(value);
+                    } catch {
+                        throw new Error(`Insert value not supported: ${value}`);
+                    }
+                }
 
                 this.setAttribute('insert', '');
             }
@@ -234,34 +242,11 @@ class MathInput extends HTMLElement {
             return;
 
         var char = e.key || e.keyCode;
-        if(/^[a-zA-Zα-ωΑ-Ω0-9.+\-*()|,='<>~]$/.test(char)) {
+        try {
+            this.insertNodeByCharacter(char);
             e.preventDefault();
-
-            var node = MathNode.buildFromCharacter(char)
-            this.insert(node);
+        } catch {
         }
-
-        if(char == '/') {
-            e.preventDefault();
-            var node = MathNode.buildFromCharacter(char)
-            this.insert(node);
-
-            var collected = node.collectNumerator();
-            if(collected) {
-                this.cursorNode = node.denominator.startNode;
-            } else {
-                this.cursorNode = node.numerator.endNode;
-            }
-        }
-
-        if(char == '^') {
-            e.preventDefault();
-            var node = MathNode.buildFromCharacter(char)
-            this.insert(node);
-
-            this.cursorNode = node.exponent.startNode;
-        }
-
 
         if(char == 'ArrowLeft') {
             e.preventDefault();
@@ -337,6 +322,47 @@ class MathInput extends HTMLElement {
 
     /** MISCELLANEOUS (CHANGE WHEN THERE'S MORE STRUCTURE) */
 
+    /**
+     * Insert a new node, whose identity is determined by the parameter `char`,
+     * then possibly move the cursor depending on what node was inserted. If an
+     * exponent, for example, move the cursor into the exponent.
+     * 
+     * @param  {String} char The character whose equivalent node is to be
+     *                       inserted
+     */
+    insertNodeByCharacter(char) {
+        var node = MathNode.buildFromCharacter(char);
+        this.insert(node);
+
+        if(char == '/') {
+            var collected = node.collectNumerator();
+            if(collected) {
+                this.cursorNode = node.denominator.startNode;
+            } else {
+                this.cursorNode = node.numerator.endNode;
+            }
+        }
+
+        if(char == '^') {
+            this.cursorNode = node.exponent.startNode;
+        }
+
+        this.focus();
+    }
+
+    /**
+     * Insert a new node, whose identity is determined by the parameter `name`,
+     * then possibly move the cursor depending on what node was inserted. If a
+     * square root, for example, move the cursor into the square root.
+     *
+     * This differs from insertNodeByCharacter because it takes symbols with
+     * multicharacter descriptors, like 'sqrt'. insertNodeByCharacter takes
+     * single-character descriptors, like '1', and generally inserts that value
+     * more or less directly into the field.
+     * 
+     * @param  {String} char The character whose equivalent node is to be
+     *                       inserted
+     */
     insertNodeByName(name) {
         var node = MathNode.buildFromName(name);
         this.insert(node);
@@ -599,6 +625,12 @@ class MathNode {
 
     /** EXPORTED STATIC FUNCTIONS */
 
+    /**
+     * Build the top-level ExpressionNode for a MathInput. Used to initialise
+     * an input field.
+     * 
+     * @return {ExpressionNode} A top-level ExpressionNode
+     */
     static buildRootNode() {
         let rootNode = new ExpressionNode(null);
         rootNode._setCursor(rootNode.startNode);
@@ -629,6 +661,13 @@ class MathNode {
         }
     }
 
+    /**
+     * Take a named symbol (like 'sqrt') and determine based on that name what
+     * MathNode class to return.
+     * 
+     * @param  {String}   name The name of the MathNode to build
+     * @return {MathNode}      The resultant MathNode
+     */
     static buildFromName(name) {
         if(name == 'sqrt') {
             return new SquareRootNode();

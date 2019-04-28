@@ -45,4 +45,10 @@ To input one of these, set the `<math-input>`'s `insert` attribute to its symbol
 <input type="button" value="Square Root" onclick="document.getElementsByName('fieldName')[0].setAttribute('insert', 'sqrt');" />
 ```
 
+Any value which could be inserted by keyboard can also be inserted in this way. A button for '0', for example, would look like this:
+
+```html
+<input type="button" value="0" onclick="document.getElementsByName('fieldName')[0].setAttribute('insert', '0');" />
+```
+
 The attribute will auto-clear when the element has been inserted, there's no need to clear it before inserting another element.
