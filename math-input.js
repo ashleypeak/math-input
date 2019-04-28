@@ -169,6 +169,7 @@ class MathInput extends HTMLElement {
         this.addEventListener('keydown', this._keydown);
         this.addEventListener('focus', this._focus);
         this.addEventListener('blur', this._blur);
+        this.addEventListener('click', this._click);
     }
 
 
@@ -296,6 +297,18 @@ class MathInput extends HTMLElement {
     _blur() {
         this._focused = false;
         this.cursorNode.toggleCursor(false);
+    }
+
+    /**
+     * OnClick, move the cursor to the last child of the root ExpressionNode,
+     * i.e. to the rightmost position in the field.
+     *
+     * Because Nodes within the ExpressionNode have their own click handlers
+     * which call stopPropagation(), if a child node is clicked this listener
+     * won't be called.
+     */
+    _click() {
+        this.rootNode.cursor = this.rootNode.endNode;
     }
 
 
@@ -692,6 +705,14 @@ class MathNode {
 class ExpressionNode extends MathNode {
     /**
      * @constructs
+     *
+     * In addition to creating the element, register a listener for clicks so
+     * when the ExpressionNode is clicked, the cursor moves to the last child
+     * of the ExpressionNode.
+     *
+     * Because Nodes within the ExpressionNode have their own click handlers
+     * which call stopPropagation(), if a child node is clicked this listener
+     * won't be called.
      */
     constructor(parent=null) {
         super(parent);
@@ -706,6 +727,13 @@ class ExpressionNode extends MathNode {
         var startNode = new StartNode(this);
         this._nodes.push(startNode);
         this._element.appendChild(startNode.element);
+
+        var self = this;
+        this._element.addEventListener('click', function(e) {
+            //setting cursor bubbles up to root node, see `set cursor`
+            self.cursor = self.endNode;
+            e.stopPropagation();
+        });
     }
 
 
@@ -1138,6 +1166,9 @@ class ExpressionNode extends MathNode {
 class UnitNode extends MathNode {
     /**
      * @constructs
+     *
+     * In addition to creating the element, register a listener for clicks so
+     * when the element is clicked on the cursor moves to it.
      */
     constructor(parent=null) {
         super(parent);
