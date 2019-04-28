@@ -841,9 +841,16 @@ class ExpressionNode extends MathNode {
         var masked = BracketNode.mask(precis);
         var masked = AbsoluteNode.mask(masked);
 
+        //if it starts with an _ i.e. a StartNode, get rid of it
+        if(/^_/.test(precis)) {
+            return this._parse(precis.slice(1), offset+1)
+        }
+
         //matches last +/-. Needs to be done in reverse order: consider a-b+c
-        var match = masked.match(/[+\-](?!.*[+\-])/);
-        if(match !== null) {
+        var match = masked.match(/([+\-])(?!.*[+\-])/);
+        //symbol can't be the first character in the string, because if it's
+        //first it's a unary positive/negative
+        if(match !== null && match.index !== 0) {
             return this._parseOperator(precis, offset, match.index);
         }
 
@@ -853,15 +860,12 @@ class ExpressionNode extends MathNode {
             return this._parseOperator(precis, offset, match.index);
         }
 
-        //if it starts with an _ i.e. a StartNode
-        if(/^_/.test(precis)) {
-            return this._parse(precis.slice(1), offset+1)
-        }
-
         //if it starts with a number
-        if(/^[0-9]/.test(precis)) {
-            var term = precis.match(/^[0-9]+(\.[0-9]+)?/)[0];
-            var mathml = '<cn>' + term + '</cn>';
+        if(/^[+\-]?[0-9]/.test(precis)) {
+            var term = precis.match(/^[+\-]?[0-9]+(\.[0-9]+)?/)[0];
+
+            var termMathML = term[0] === '+' ? term.slice(1) : term;
+            var mathml = '<cn>' + termMathML + '</cn>';
 
             return this._parseTerm(term, mathml, precis, offset, preModifier);
         }
