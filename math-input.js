@@ -849,7 +849,8 @@ class ExpressionNode extends MathNode {
         //matches last +/-. Needs to be done in reverse order: consider a-b+c
         var match = masked.match(/([+\-])(?!.*[+\-])/);
         //symbol can't be the first character in the string, because if it's
-        //first it's a unary positive/negative
+        //first it's a unary positive/negative (unary positive not supported,
+        //but nevertheless can't be handled here.)
         if(match !== null && match.index !== 0) {
             return this._parseOperator(precis, offset, match.index);
         }
@@ -860,12 +861,15 @@ class ExpressionNode extends MathNode {
             return this._parseOperator(precis, offset, match.index);
         }
 
-        //if it starts with a number
-        if(/^[+\-]?[0-9]/.test(precis)) {
-            var term = precis.match(/^[+\-]?[0-9]+(\.[0-9]+)?/)[0];
+        //if it starts with a unary negative
+        if(/^-/.test(precis)) {
+            return this._parse(precis.slice(1), offset + 1, 'negative');
+        }
 
-            var termMathML = term[0] === '+' ? term.slice(1) : term;
-            var mathml = '<cn>' + termMathML + '</cn>';
+        //if it starts with a number
+        if(/^[0-9]/.test(precis)) {
+            var term = precis.match(/^[0-9]+(\.[0-9]+)?/)[0];
+            var mathml = '<cn>' + term + '</cn>';
 
             return this._parseTerm(term, mathml, precis, offset, preModifier);
         }
@@ -1013,7 +1017,9 @@ class ExpressionNode extends MathNode {
      */
     _parsePreModifiers(term, mathml, precis, offset, preModifier) {
         if(['sin', 'cos', 'tan', 'ln'].includes(preModifier)) {
-            mathml = '<apply><' + preModifier + '/>' + mathml + '</apply>';
+            mathml = `<apply><${preModifier}/>${mathml}</apply>`;
+        } else if(preModifier === 'negative') {
+            mathml = `<apply><minus/>${mathml}</apply>`;
         }
 
         return [term, mathml, precis, offset];
