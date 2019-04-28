@@ -182,12 +182,12 @@ class MathInput extends HTMLElement {
     */
     connectedCallback() {
         //proxy input
-        var input = document.createElement('input');
-        input.name = this.getAttribute('name');
-        input.value = this.getAttribute('value');
-        input.tabIndex = -1;
-        input.setAttribute('class', 'real-input');
-        this.appendChild(input);
+        this.realInput = document.createElement('input');
+        this.realInput.name = this.getAttribute('name');
+        this.realInput.value = this.getAttribute('value');
+        this.realInput.tabIndex = -1;
+        this.realInput.setAttribute('class', 'real-input');
+        this.appendChild(this.realInput);
 
         this._connected = true;
     }
@@ -202,7 +202,7 @@ class MathInput extends HTMLElement {
     attributeChangedCallback(name, old, value) {
         if(this._connected) {
             if(name === 'value') {
-                this.getElementsByClassName('real-input')[0].value = value;
+                this.realInput.value = value;
             } else if(name === 'insert' && value !== '') {
                 try {
                     this.insertNodeByCharacter(value);
