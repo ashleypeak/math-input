@@ -126,6 +126,12 @@ TEMPLATE.innerHTML = `
 
         .wrapper .square-root .radicand .start {
             width: 0px;
+            margin-right: 0px;
+        }
+
+        .wrapper .square-root .radicand .start:only-child {
+            width: 5px;
+            margin-right: 5px;
         }
     </style>
     <div id='wrapper' class='wrapper'>
@@ -228,7 +234,7 @@ class MathInput extends HTMLElement {
             return;
 
         var char = e.key || e.keyCode;
-        if(/^[a-zA-Z0-9.+\-*()|,='<>~]$/.test(char)) {
+        if(/^[a-zA-Zα-ωΑ-Ω0-9.+\-*()|,='<>~]$/.test(char)) {
             e.preventDefault();
 
             var node = MathNode.buildFromCharacter(char)
@@ -608,7 +614,7 @@ class MathNode {
      * @return {MathNode} The resultant MathNode
      */
     static buildFromCharacter(char) {
-        if(/^[a-zA-Z0-9.+\-*]$/.test(char)) {
+        if(/^[a-zA-Zα-ωΑ-Ω0-9.+\-*]$/.test(char)) {
             return new AtomNode(char);
         } else if(/^\/$/.test(char)) {
             return new DivisionNode();
@@ -626,6 +632,8 @@ class MathNode {
     static buildFromName(name) {
         if(name == 'sqrt') {
             return new SquareRootNode();
+        } else if(name == 'pi') {
+            return new AtomNode('π');
         } else {
             throw new Error('Not implemented: ' + name);
         }
@@ -801,15 +809,16 @@ class ExpressionNode extends MathNode {
         }
 
         //if it starts with pi
-        if(/^pi/.test(precis)) {
-            var term = precis.slice(0, 2);
+        var piPattern = /^pi|π/;
+        if(piPattern.test(precis)) {
+            var term = precis.match(piPattern)[0];
             var mathml = '<pi/>';
 
             return this._parseTerm(term, mathml, precis, offset, preModifier);
         }
 
         //if it starts with a letter
-        if(/^[a-zA-Z]/.test(precis)) {
+        if(/^[a-zA-Zα-ωΑ-Ω]/.test(precis)) {
             var term = precis[0];
             var mathml = '<ci>' + term + '</ci>';
 
@@ -1458,7 +1467,7 @@ class DivisionNode extends UnitNode {
         } while(node = node.previousSibling)
 
         //match everything that should move to numerator, fairly arbitrary
-        var match = precis.match(/[a-zA-Z0-9]+$/);
+        var match = precis.match(/[a-zA-Zα-ωΑ-Ω0-9]+$/);
         if(match !== null) {
             for(var i = 0; i < match[0].length; i++) {
                 this.numerator.startNode.insertAfter(this.previousSibling);

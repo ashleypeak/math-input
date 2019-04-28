@@ -30,13 +30,14 @@ Then use it as a regular form element:
 
 The field will accept the following characters as input:
 
-`[a-zA-Z0-9.+\-*\/()\|^]`
+`[a-zA-Z0-9α-ωΑ-Ω.+\-*\/()\|^]`
 
 It will also accept the following elements, which can't be easily typed:
 
 | Element     | Symbol| 
 | ----------- | ------ |
 | Square root | `sqrt` |
+| π           | `pi`   |
 
 To input one of these, set the `<math-input>`'s `insert` attribute to its symbol in the right hand column. A buttton to add a square root symbol, for instance, might look like this:
 
