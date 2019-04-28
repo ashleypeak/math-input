@@ -35,6 +35,7 @@ The field will accept the following characters as input:
 Most of the letters will be parsed as individual unknowns. Typing `xy`, for instance, will be interpreted as 'x times y'. There are, however, a few exceptions:
 
 | Input | Interpretation |
+| ----- | -------------- |
 | `e`   | Euler's number |
 | `π`   | The constant π ≈ 3.142 |
 | `pi`  | The constant π ≈ 3.142 |
