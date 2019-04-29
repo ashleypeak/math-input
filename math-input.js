@@ -8,19 +8,7 @@ TEMPLATE.innerHTML = `
     <style type='text/css'>
         .wrapper {
             display: inline-flex;
-            border: 1px solid;
             padding: 5px 5px 5px 3px;
-            background-color: #ffffff;
-            min-width: 200px;
-            cursor: text;
-            font-family: "Helvetica Neue", Arial, sans-serif;
-            font-size: 17px;
-            line-height: 17px;
-        }
-
-        .wrapper.error {
-            border-color: #d9534f;
-            background-color: #f2dede;
         }
 
         .wrapper .expression {
@@ -407,14 +395,14 @@ class MathInput extends HTMLElement {
      */
     updateValue() {
         try {
-            this.wrapper.classList.remove('error');
+            this.classList.remove('error');
             this.setAttribute('value', this.rootNode.value);
         } catch(error) {
             if(DEBUG) {
                 console.error(error);
             }
 
-            this.wrapper.classList.add('error');
+            this.classList.add('error');
             this.setAttribute('value', '');
         }
     }

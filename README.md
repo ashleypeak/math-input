@@ -6,15 +6,18 @@ This component defines the `<math-input>` field, which behaves as a regular form
 
 ## Installation
 
-The component is contained in two JavaScript file, `math-input.js` and `math-node.js`. Simply download both into the same directory in your project folder.
+The component is contained in two JavaScript files and one CSS file, `math-input.js`, `math-node.js` and `math-input.css`. Simply download them into your project folder, ensuring that the two JavaScript files are in the same directory.
 
 ## Usage
 
-First include the module:
+First include the module and stylesheet:
 
 ```html
+<link rel="stylesheet" href="../math-input.css"></link>
 <script type="module" src="math-input.js"></script>
 ```
+
+**Note:** Due to the expanding nature of the input, if you wish to change its size use the `min-width` and `min-height` properties instead of `width` and `height`.
 
 Then use it as a regular form element:
 

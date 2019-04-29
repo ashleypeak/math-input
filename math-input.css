@@ -1,0 +1,16 @@
+math-input {
+    display: inline-block;
+    border: 1px solid #000000;
+    color: #000000;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 17px;
+    line-height: 17px;
+    min-width: 200px;
+    background-color: #ffffff;
+    cursor: text;
+}
+
+math-input.error {
+    border-color: #d9534f;
+    background-color: #f2dede;
+}
