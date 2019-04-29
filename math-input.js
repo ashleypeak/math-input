@@ -826,18 +826,19 @@ class ExpressionNode extends MathNode {
      * `offset` starts at 1 to accomodate the StartNode, which isn't
      * represented in the precis
      *
-     * `preModifier` keeps track of a previous element which affects the next
+     * `preModifiers` keeps track of a previous elements which affect the next
      * e.g. sin(x) has two terms: 'sin' and '(x)'. We pass 'sin' as a
      * preModifier back to _parse, so that the engine knows to return the sine
      * of 'x', not just 'x', on its next run.
      *
      * @see  UnitNode.precis()
-     * @param  {String} precis      A precis of a set of nodes
-     * @param  {Number} offset      The offset between `precis` and `_nodes`
-     * @param  {String} preModifier A preModifier, if any, that must be applied
-     * @return {String}             A MathML string
+     * @param  {String} precis       A precis of a set of nodes
+     * @param  {Number} offset       The offset between `precis` and `_nodes`
+     * @param  {Array}  preModifiers An array of preModifiers, if any, that
+     *                               must be applied
+     * @return {String}              A MathML string
      */
-    _parse(precis, offset=0, preModifier=null) {
+    _parse(precis, offset=0, preModifiers=[]) {
         var masked = BracketNode.mask(precis);
         var masked = AbsoluteNode.mask(masked);
 
@@ -863,7 +864,8 @@ class ExpressionNode extends MathNode {
 
         //if it starts with a unary negative
         if(/^-/.test(precis)) {
-            return this._parse(precis.slice(1), offset + 1, 'negative');
+            preModifiers.push('negative');
+            return this._parse(precis.slice(1), offset + 1, preModifiers);
         }
 
         //if it starts with a number
@@ -871,16 +873,17 @@ class ExpressionNode extends MathNode {
             var term = precis.match(/^[0-9]+(\.[0-9]+)?/)[0];
             var mathml = '<cn>' + term + '</cn>';
 
-            return this._parseTerm(term, mathml, precis, offset, preModifier);
+            return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
 
         //if it starts with a known function
-        var functionPattern = /^sin|cos|tan|ln/;
+        var functionPattern = /^(sin|cos|tan|ln)/;
         if(functionPattern.test(precis)) {
             var term = precis.match(functionPattern)[0];
             var len = term.length;
 
-            return this._parse(precis.slice(len), offset+len, term);
+            preModifiers.push(term);
+            return this._parse(precis.slice(len), offset+len, preModifiers);
         }
 
         //if it starts with pi
@@ -889,7 +892,7 @@ class ExpressionNode extends MathNode {
             var term = precis.match(piPattern)[0];
             var mathml = '<pi/>';
 
-            return this._parseTerm(term, mathml, precis, offset, preModifier);
+            return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
 
         //if it is the letter 'e', parse as Euler's number
@@ -897,7 +900,7 @@ class ExpressionNode extends MathNode {
             var term = precis[0];
             var mathml = '<csymbol>e</csymbol>';
 
-            return this._parseTerm(term, mathml, precis, offset, preModifier);
+            return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
 
         //if it starts with a letter
@@ -905,7 +908,7 @@ class ExpressionNode extends MathNode {
             var term = precis[0];
             var mathml = '<ci>' + term + '</ci>';
 
-            return this._parseTerm(term, mathml, precis, offset, preModifier);
+            return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
 
         //if it starts with a % i.e. is a non-Atom, non-Exponent UnitNode
@@ -913,9 +916,11 @@ class ExpressionNode extends MathNode {
             var term = precis[0];
             var mathml = this.nodes[offset].value;
 
-            return this._parseTerm(term, mathml, precis, offset, preModifier);
+            return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
 
+        console.log(preModifiers)
+        console.log(precis);
         //if it starts with a parenthesis
         if(/^\(/.test(precis)) {
             //can't find end using `masked` because (1)(2) would return 5 not 2
@@ -928,7 +933,7 @@ class ExpressionNode extends MathNode {
             var term = precis.slice(0, end + 1);
             var mathml = this._parse(term.slice(1, -1), offset + 1);
 
-            return this._parseTerm(term, mathml, precis, offset, preModifier);
+            return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
 
         //if it starts with a pipe
@@ -943,7 +948,7 @@ class ExpressionNode extends MathNode {
             var innerMathml = this._parse(term.slice(1, -1), offset + 1);
             var mathml = '<apply><abs/>' + innerMathml + '</apply>';
 
-            return this._parseTerm(term, mathml, precis, offset, preModifier);
+            return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
 
         //if no match has been found
@@ -957,19 +962,20 @@ class ExpressionNode extends MathNode {
      *  - if the term comprises the entire precis, return it's calculated `mathml`
      *  - otherwise, parse the rest and multiply them together
      *  
-     * @param  {String} term        The portion of the precis identified as a term
-     * @param  {String} mathml      The mathml rendering of `term`
-     * @param  {String} precis      The full precis being parsed
-     * @param  {Number} offset      The precis' offset within the expression
-     * @param  {String} preModifier The preModifier - @see _parse
-     * @return {String}             The resultant mathml term
+     * @param  {String} term         The portion of the precis identified as a term
+     * @param  {String} mathml       The mathml rendering of `term`
+     * @param  {String} precis       The full precis being parsed
+     * @param  {Number} offset       The precis' offset within the expression
+     * @param  {Array}  preModifiers The preModifiers - @see _parse
+     * @return {String}              The resultant mathml term
      */
-    _parseTerm(term, mathml, precis, offset, preModifier) {
+    _parseTerm(term, mathml, precis, offset, preModifiers) {
         //I'm not certain that it will always be fine to run all postModifiers
         //before all preModifiers, but it's fine (and necessary) for now.
         [term, mathml, precis, offset] = this._parsePostModifiers(term, mathml, precis, offset);
-        if(preModifier !== null)
-            [term, mathml, precis, offset] = this._parsePreModifiers(term, mathml, precis, offset, preModifier);
+        if(preModifiers !== []) {
+            [term, mathml, precis, offset] = this._parsePreModifiers(term, mathml, precis, offset, preModifiers);
+        }
 
         if(term.length == precis.length) {
             return mathml;
@@ -1003,23 +1009,27 @@ class ExpressionNode extends MathNode {
     }
 
     /**
-     * We've identified (in `_parse`) that there is a preModifier to apply -
+     * We've identified (in `_parse`) that there is a preModifiers to apply -
      * that is, anything before a term which alters it (e.g. 'sin' or 'ln').
-     * Apply the premodifier, make appropriate changes to the arguments, then
+     * Apply the preModifier, make appropriate changes to the arguments, then
      * pass them back altered.
      * 
-     * @param  {String} term        The portion of the precis identified as a term
-     * @param  {String} mathml      The mathml rendering of `term`
-     * @param  {String} precis      The full precis being parsed
-     * @param  {Number} offset      The precis' offset within the expression
-     * @param  {String} preModifier The identified preModifier
-     * @return {Array}              The function arguments, altered and returned
+     * @param  {String} term         The portion of the precis identified as a term
+     * @param  {String} mathml       The mathml rendering of `term`
+     * @param  {String} precis       The full precis being parsed
+     * @param  {Number} offset       The precis' offset within the expression
+     * @param  {Array}  preModifiers The identified preModifiers
+     * @return {Array}               The function arguments, altered and returned
      */
-    _parsePreModifiers(term, mathml, precis, offset, preModifier) {
-        if(['sin', 'cos', 'tan', 'ln'].includes(preModifier)) {
-            mathml = `<apply><${preModifier}/>${mathml}</apply>`;
-        } else if(preModifier === 'negative') {
-            mathml = `<apply><minus/>${mathml}</apply>`;
+    _parsePreModifiers(term, mathml, precis, offset, preModifiers) {
+        //apply in reverse order
+        let preModifier = null;
+        while(typeof (preModifier = preModifiers.pop()) !== 'undefined') {
+            if(['sin', 'cos', 'tan', 'ln'].includes(preModifier)) {
+                mathml = `<apply><${preModifier}/>${mathml}</apply>`;
+            } else if(preModifier === 'negative') {
+                mathml = `<apply><minus/>${mathml}</apply>`;
+            }
         }
 
         return [term, mathml, precis, offset];
