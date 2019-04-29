@@ -6,7 +6,7 @@ This component defines the `<math-input>` field, which behaves as a regular form
 
 ## Installation
 
-The component is contained in a single JavaScript file, `math-input.js`. Simply download it into your project folder.
+The component is contained in two JavaScript file, `math-input.js` and `math-node.js`. Simply download both into the same directory in your project folder.
 
 ## Usage
 
