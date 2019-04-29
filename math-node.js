@@ -304,11 +304,11 @@ class ExpressionNode extends MathNode {
         //the first element
         //has to be inserted manually because there is no child in a new ExpressionNode
         //to insert it after
-        var startNode = new StartNode(this);
+        let startNode = new StartNode(this);
         this._nodes.push(startNode);
         this._element.appendChild(startNode.element);
 
-        var self = this;
+        let self = this;
         this._element.addEventListener('click', function(e) {
             //setting cursor bubbles up to root node, see `set cursor`
             self.cursor = self.endNode;
@@ -385,7 +385,7 @@ class ExpressionNode extends MathNode {
      * ones.
      */
     redraw() {
-        var nodeParams = this.nodes.map((el) => ({height: el.height, center: el.center}));
+        let nodeParams = this.nodes.map((el) => ({height: el.height, center: el.center}));
 
         this.nodes.forEach(function(node) {
             node.redraw(nodeParams);
@@ -419,8 +419,8 @@ class ExpressionNode extends MathNode {
      * @return {String}              A MathML string
      */
     _parse(precis, offset=0, preModifiers=[]) {
-        var masked = BracketNode.mask(precis);
-        var masked = AbsoluteNode.mask(masked);
+        let masked = BracketNode.mask(precis);
+        masked = AbsoluteNode.mask(masked);
 
         //if it starts with an _ i.e. a StartNode, get rid of it
         if(/^_/.test(precis)) {
@@ -428,7 +428,7 @@ class ExpressionNode extends MathNode {
         }
 
         //matches last +/-. Needs to be done in reverse order: consider a-b+c
-        var match = masked.match(/([+\-])(?!.*[+\-])/);
+        let match = masked.match(/([+\-])(?!.*[+\-])/);
         //symbol can't be the first character in the string, because if it's
         //first it's a unary positive/negative (unary positive not supported,
         //but nevertheless can't be handled here.)
@@ -437,7 +437,7 @@ class ExpressionNode extends MathNode {
         }
 
         //match a times symbol
-        var match = masked.match(/\*/);
+        match = masked.match(/\*/);
         if(match !== null) {
             return this._parseOperator(precis, offset, match.index);
         }
@@ -450,51 +450,51 @@ class ExpressionNode extends MathNode {
 
         //if it starts with a number
         if(/^[0-9]/.test(precis)) {
-            var term = precis.match(/^[0-9]+(\.[0-9]+)?/)[0];
-            var mathml = '<cn>' + term + '</cn>';
+            let term = precis.match(/^[0-9]+(\.[0-9]+)?/)[0];
+            let mathml = '<cn>' + term + '</cn>';
 
             return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
 
         //if it starts with a known function
-        var functionPattern = /^(sin|cos|tan|ln)/;
+        let functionPattern = /^(sin|cos|tan|ln)/;
         if(functionPattern.test(precis)) {
-            var term = precis.match(functionPattern)[0];
-            var len = term.length;
+            let term = precis.match(functionPattern)[0];
+            let len = term.length;
 
             preModifiers.push(term);
             return this._parse(precis.slice(len), offset+len, preModifiers);
         }
 
         //if it starts with pi
-        var piPattern = /^pi|π/;
+        let piPattern = /^pi|π/;
         if(piPattern.test(precis)) {
-            var term = precis.match(piPattern)[0];
-            var mathml = '<pi/>';
+            let term = precis.match(piPattern)[0];
+            let mathml = '<pi/>';
 
             return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
 
         //if it is the letter 'e', parse as Euler's number
         if(/^e/.test(precis)) {
-            var term = precis[0];
-            var mathml = '<csymbol>e</csymbol>';
+            let term = precis[0];
+            let mathml = '<csymbol>e</csymbol>';
 
             return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
 
         //if it starts with a letter
         if(/^[a-zA-Zα-ωΑ-Ω]/.test(precis)) {
-            var term = precis[0];
-            var mathml = '<ci>' + term + '</ci>';
+            let term = precis[0];
+            let mathml = '<ci>' + term + '</ci>';
 
             return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
 
         //if it starts with a % i.e. is a non-Atom, non-Exponent UnitNode
         if(/^%/.test(precis)) {
-            var term = precis[0];
-            var mathml = this.nodes[offset].value;
+            let term = precis[0];
+            let mathml = this.nodes[offset].value;
 
             return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
@@ -502,29 +502,29 @@ class ExpressionNode extends MathNode {
         //if it starts with a parenthesis
         if(/^\(/.test(precis)) {
             //can't find end using `masked` because (1)(2) would return 5 not 2
-            var end = BracketNode.findMatchingParen(precis, 0);
+            let end = BracketNode.findMatchingParen(precis, 0);
 
             if(end === null) {
                 throw new Error('Unmatched parenthesis.');
             }
 
-            var term = precis.slice(0, end + 1);
-            var mathml = this._parse(term.slice(1, -1), offset + 1);
+            let term = precis.slice(0, end + 1);
+            let mathml = this._parse(term.slice(1, -1), offset + 1);
 
             return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
 
         //if it starts with a pipe
         if(/^\|/.test(precis)) {
-            var end = precis.indexOf('|', 1);
+            let end = precis.indexOf('|', 1);
 
             if(end === -1) {
                 throw new Error('Unmatched pipe.');
             }
 
-            var term = precis.slice(0, end + 1);
-            var innerMathml = this._parse(term.slice(1, -1), offset + 1);
-            var mathml = '<apply><abs/>' + innerMathml + '</apply>';
+            let term = precis.slice(0, end + 1);
+            let innerMathml = this._parse(term.slice(1, -1), offset + 1);
+            let mathml = '<apply><abs/>' + innerMathml + '</apply>';
 
             return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
@@ -558,8 +558,8 @@ class ExpressionNode extends MathNode {
         if(term.length == precis.length) {
             return mathml;
         } else {
-            var offset = offset + term.length;
-            var rest = this._parse(precis.slice(term.length), offset);
+            offset = offset + term.length;
+            let rest = this._parse(precis.slice(term.length), offset);
 
             return '<apply><times/>' + mathml + rest + '</apply>';
         }
@@ -578,7 +578,7 @@ class ExpressionNode extends MathNode {
      */
     _parsePostModifiers(term, mathml, precis, offset) {
         if(precis[term.length] === '^') {
-            var exponent_mathml = this.nodes[offset+term.length].value;
+            let exponent_mathml = this.nodes[offset+term.length].value;
             term += '^';
             mathml = '<apply><power/>' + mathml + exponent_mathml +  '</apply>';
         }
@@ -623,15 +623,15 @@ class ExpressionNode extends MathNode {
      * @return {String}             A MathML string
      */
     _parseOperator(precis, offset, operatorPos) {
-        var op = precis[operatorPos];
-        var lhs = this._parse(
+        let op = precis[operatorPos];
+        let lhs = this._parse(
             precis.slice(0, operatorPos),
             offset);
-        var rhs = this._parse(
+        let rhs = this._parse(
             precis.slice(operatorPos + 1),
             offset + operatorPos + 1);
 
-        var op_tags = {'+': '<plus/>', '-': '<minus/>', '*': '<times/>'};
+        let op_tags = {'+': '<plus/>', '-': '<minus/>', '*': '<times/>'};
 
         return '<apply>' + op_tags[op] + lhs + rhs + '</apply>';
     }
@@ -643,14 +643,14 @@ class ExpressionNode extends MathNode {
      * @param  {MathNode} newNode The node being inserted
      */
     childInsertAfter(child, newNode) {
-        var index = this.indexOf(child);
+        let index = this.indexOf(child);
 
         newNode.parent = this;
 
         //use internal names because we're modifying
         this._nodes.splice(index+1, 0, newNode);
 
-        var nextSibling = child.element.nextSibling;
+        let nextSibling = child.element.nextSibling;
         if(nextSibling !== null) {
             this._element.insertBefore(newNode.element, nextSibling);
         } else {
@@ -671,7 +671,7 @@ class ExpressionNode extends MathNode {
      * @return {MathNode}      The node to the left of `node`
      */
     childLeft(node, defaultNode) {
-        var index = this.indexOf(node);
+        let index = this.indexOf(node);
 
         if(index !== 0) {
             return this.nodes[index - 1].cursorNodeFromRight;
@@ -688,7 +688,7 @@ class ExpressionNode extends MathNode {
      * @see  childLeft
      */
     childRight(node, defaultNode) {
-        var index = this.indexOf(node);
+        let index = this.indexOf(node);
 
         if(index+1 < this.nodes.length) {
             return this.nodes[index + 1].cursorNodeFromLeft;
@@ -733,7 +733,7 @@ class ExpressionNode extends MathNode {
      * @param  {MathNode} node The node to be deleted
      */
     childDelete(node) {
-        var index = this.indexOf(node);
+        let index = this.indexOf(node);
 
         this._nodes.splice(index, 1);
         this._element.removeChild(node.element);
@@ -742,7 +742,7 @@ class ExpressionNode extends MathNode {
     }
 
     indexOf(node) {
-        var index = this.nodes.findIndex((el) => el == node);
+        let index = this.nodes.findIndex((el) => el == node);
 
         if(index == -1) {
             throw new Error('Node not found.');
@@ -772,7 +772,7 @@ class UnitNode extends MathNode {
         super(parent);
         this._element.classList.add('unit');
 
-        var self = this;
+        let self = this;
         this._element.addEventListener('click', function(e) {
             //setting cursor bubbles up to root node, see `set cursor`
             self.cursor = self;
@@ -870,7 +870,7 @@ class UnitNode extends MathNode {
      * @return {MathNode} The previous node
      */
     get previousSibling() {
-        var index = this.parent.indexOf(this);
+        let index = this.parent.indexOf(this);
 
         if(index == 0) {
             return null;
@@ -889,8 +889,8 @@ class UnitNode extends MathNode {
      * @param  {Array} nodeParams The dimensions of all nodes in the element;
      */
     redraw(nodeParams) {
-        var maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
-        var diff = Math.floor(maxCenter - this.center);
+        let maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
+        let diff = Math.floor(maxCenter - this.center);
         this._element.style.marginTop = diff.toString() + 'px';
     }
 
@@ -1136,16 +1136,16 @@ class DivisionNode extends UnitNode {
      * @return {Boolean} Were any elements added to numerator?
      */
     collectNumerator() {
-        var precis = '';
-        var node = this.previousSibling;
+        let precis = '';
+        let node = this.previousSibling;
         do {
             precis = node.precis + precis;
         } while(node = node.previousSibling)
 
         //match everything that should move to numerator, fairly arbitrary
-        var match = precis.match(/[a-zA-Zα-ωΑ-Ω0-9]+$/);
+        let match = precis.match(/[a-zA-Zα-ωΑ-Ω0-9]+$/);
         if(match !== null) {
-            for(var i = 0; i < match[0].length; i++) {
+            for(let i = 0; i < match[0].length; i++) {
                 this.numerator.startNode.insertAfter(this.previousSibling);
             }
 
@@ -1154,13 +1154,13 @@ class DivisionNode extends UnitNode {
 
         match = precis.match(/\)$/);
         if(match !== null) {
-            var start = BracketNode.findMatchingParen(precis, precis.length-1);
+            let start = BracketNode.findMatchingParen(precis, precis.length-1);
             if(start === null) {
                 start = 0;
             }
 
-            var count = precis.length - start;
-            for(var i = 0; i < count; i++) {
+            let count = precis.length - start;
+            for(let i = 0; i < count; i++) {
                 this.numerator.startNode.insertAfter(this.previousSibling);
             }
 
@@ -1257,10 +1257,10 @@ class BracketNode extends UnitNode {
      * @param  {Array} nodeParams The dimensions of all nodes in the element;
      */
     redraw(nodeParams) {
-        var precis = this.parent.precis;
-        var start = this.parent.indexOf(this);
+        let precis = this.parent.precis;
+        let start = this.parent.indexOf(this);
 
-        var end = BracketNode.findMatchingParen(precis, start);
+        let end = BracketNode.findMatchingParen(precis, start);
         if(end === null) {
             //This -1 is confusing, but the start and end are supposed to be
             //the positions of the brackets. If there's no starting bracket,
@@ -1274,18 +1274,18 @@ class BracketNode extends UnitNode {
             [start, end] = [end, start];
         }
 
-        var innerParams = nodeParams.slice(start+1, end);
+        let innerParams = nodeParams.slice(start+1, end);
         //note this.height refers to default height, not css height
-        var maxInnerHeight = innerParams.reduce((acc, node) => Math.max(acc, node.height), this.height)
+        let maxInnerHeight = innerParams.reduce((acc, node) => Math.max(acc, node.height), this.height)
 
         this._element.style.height = maxInnerHeight.toString() + 'px';
         this._element.style.width = (maxInnerHeight / 8).toString() + 'px';
 
         //because brackets grow with contents, we only want marginTop to
         //increase if there are larger elements outside
-        var maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
-        var maxInnerCenter = innerParams.reduce((acc, node) => Math.max(acc, node.center), this.center)
-        var diff = Math.floor(maxCenter - maxInnerCenter);
+        let maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
+        let maxInnerCenter = innerParams.reduce((acc, node) => Math.max(acc, node.center), this.center)
+        let diff = Math.floor(maxCenter - maxInnerCenter);
         this._element.style.marginTop = diff.toString() + 'px';
     }
 
@@ -1308,10 +1308,10 @@ class BracketNode extends UnitNode {
      * @return {Number}        The location of the close parenthesis
      */
     static findMatchingParen(str, start) {
-        var depth = 1;
+        let depth = 1;
 
         if(str[start] == '(') {
-            for(var i = start + 1; i < str.length; i++) {
+            for(let i = start + 1; i < str.length; i++) {
                 if(str[i] == ')') {
                     depth--;
                     if(depth == 0) {
@@ -1324,7 +1324,7 @@ class BracketNode extends UnitNode {
 
             return null;
         } else if(str[start] == ')') {
-            for(var i = start - 1; i >= 0; i--) {
+            for(let i = start - 1; i >= 0; i--) {
                 if(str[i] == '(') {
                     depth--;
                     if(depth == 0) {
@@ -1349,16 +1349,16 @@ class BracketNode extends UnitNode {
      * @return {String}     The masked string
      */
     static mask(str) {
-        var masked = str;
-        var start = -1;
+        let masked = str;
+        let start = -1;
         while((start = masked.indexOf('(')) != -1) {
-            var end = BracketNode.findMatchingParen(masked, start);
+            let end = BracketNode.findMatchingParen(masked, start);
 
             if(end === null) {
                 end = str.length - 1;
             }
 
-            var len = end - start + 1;
+            let len = end - start + 1;
 
             masked = masked.substr(0, start) + '#'.repeat(len) + masked.substr(end + 1);
         }
@@ -1378,9 +1378,9 @@ class BracketNode extends UnitNode {
      */
     static getContext(str, start) {
         str = str.slice(0, start) + ')' + str.slice(start + 1);
-        var open = BracketNode.findMatchingParen(str, start);
+        let open = BracketNode.findMatchingParen(str, start);
         str = str.slice(0, start) + '(' + str.slice(start + 1);
-        var close = BracketNode.findMatchingParen(str, start);
+        let close = BracketNode.findMatchingParen(str, start);
 
         return [open, close];
     }
@@ -1395,7 +1395,7 @@ class AbsoluteNode extends UnitNode {
         super(parent);
         this._element.classList.add('pipe');
 
-        var pipeDisp = document.createElement('div');
+        let pipeDisp = document.createElement('div');
         pipeDisp.classList.add('pipe-display')
         this._element.appendChild(pipeDisp);
     }
@@ -1407,12 +1407,12 @@ class AbsoluteNode extends UnitNode {
      * @param  {Array} nodeParams The dimensions of all nodes in the element;
      */
     redraw(nodeParams) {
-        var precis = this.parent.precis;
-        var start = this.parent.indexOf(this);
+        let precis = this.parent.precis;
+        let start = this.parent.indexOf(this);
 
-        var end = AbsoluteNode.findMatchingPipe(precis, start);
+        let end = AbsoluteNode.findMatchingPipe(precis, start);
         if(end === null) {
-            [open, close] = BracketNode.getContext(precis, start);
+            let [open, close] = BracketNode.getContext(precis, start);
 
             if(close !== null) {
                 end = close;
@@ -1425,18 +1425,18 @@ class AbsoluteNode extends UnitNode {
             [start, end] = [end, start];
         }
 
-        var innerParams = nodeParams.slice(start+1, end);
+        let innerParams = nodeParams.slice(start+1, end);
         //note this.height refers to default height, not css height
-        var maxInnerHeight = innerParams.reduce((acc, node) => Math.max(acc, node.height), this.height)
-        var heightStr = maxInnerHeight.toString() + 'px';
+        let maxInnerHeight = innerParams.reduce((acc, node) => Math.max(acc, node.height), this.height)
+        let heightStr = maxInnerHeight.toString() + 'px';
 
         this._element.style.height = heightStr;
 
         //because pipes grow with contents, we only want marginTop to
         //increase if there are larger elements outside
-        var maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
-        var maxInnerCenter = innerParams.reduce((acc, node) => Math.max(acc, node.center), this.center)
-        var diff = Math.floor(maxCenter - maxInnerCenter);
+        let maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
+        let maxInnerCenter = innerParams.reduce((acc, node) => Math.max(acc, node.center), this.center)
+        let diff = Math.floor(maxCenter - maxInnerCenter);
         this._element.style.marginTop = diff.toString() + 'px';
     }
 
@@ -1458,7 +1458,7 @@ class AbsoluteNode extends UnitNode {
      */
     static findMatchingPipe(str, start) {
         //first, find the start/end of the bracketed term we're in
-        [open, close] = BracketNode.getContext(str, start);
+        let [open, close] = BracketNode.getContext(str, start);
 
         if(open === null) {
             open = -1;
@@ -1469,18 +1469,18 @@ class AbsoluteNode extends UnitNode {
         }
 
         //mask everything outside of that context
-        var masked = '#'.repeat(open + 1) + str.slice(open + 1, close) + '#'.repeat(str.length - close);
+        let masked = '#'.repeat(open + 1) + str.slice(open + 1, close) + '#'.repeat(str.length - close);
 
         //then mask all fully-enclosed bracketed terms inside the context
         masked = BracketNode.mask(masked);
 
         //now just pair them off from the start. if there are an odd number
         //before, match backwards, otherwise match forwards.
-        var prevMatches = masked.substring(0, start).match(/\|/g);
+        let prevMatches = masked.substring(0, start).match(/\|/g);
         if(prevMatches !== null && prevMatches.length % 2 == 1) {
             return masked.lastIndexOf('|', start - 1);
         } else {
-            var match = masked.indexOf('|', start + 1);
+            let match = masked.indexOf('|', start + 1);
 
             if(match !== -1) {
                 return match;
@@ -1500,16 +1500,16 @@ class AbsoluteNode extends UnitNode {
      * @return {String}     The masked string
      */
     static mask(str) {
-        var masked = str;
-        var start = -1;
+        let masked = str;
+        let start = -1;
         while((start = masked.indexOf('|')) != -1) {
-            var end = masked.indexOf('|', start + 1);
+            let end = masked.indexOf('|', start + 1);
 
             if(end === null) {
                 end = str.length - 1;
             }
 
-            var len = end - start + 1;
+            let len = end - start + 1;
 
             masked = masked.substr(0, start) + '#'.repeat(len) + masked.substr(end + 1);
         }
@@ -1547,9 +1547,9 @@ class ExponentNode extends UnitNode {
         //   `center` for now but that could change)
         // - the only UnitNode that's guaranteed to exist is the StartNode
         // - so calculate its difference, and add it to the height
-        var startHeight = this.parent.startNode.height;
-        var startCenter = this.parent.startNode.center;
-        var diff = startCenter;
+        let startHeight = this.parent.startNode.height;
+        let startCenter = this.parent.startNode.center;
+        let diff = startCenter;
 
         return Math.max(this.exponent.height, 17) + diff;
     }
@@ -1662,11 +1662,11 @@ class SquareRootNode extends UnitNode {
      * @param  {Array} nodeParams The dimensions of all nodes in the element;
      */
     redraw(nodeParams) {
-        var maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
-        var diff = Math.floor(maxCenter - this.center);
+        let maxCenter = nodeParams.reduce((acc, node) => Math.max(acc, node.center), 0)
+        let diff = Math.floor(maxCenter - this.center);
         this._element.style.marginTop = diff.toString() + 'px';
 
-        var heightString = this.height.toString() + 'px';
+        let heightString = this.height.toString() + 'px';
         this._radix.style.height = heightString;
         //numbers are just the width:height ratio of the radix graphic
         this._radix.style.width = ((this.height*21)/38).toString() + '10px';

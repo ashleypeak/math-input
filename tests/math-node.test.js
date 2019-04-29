@@ -89,6 +89,7 @@ test('basics', () => {
     expect(expr('e').value).toBe('<csymbol>e</csymbol>');
     expect(expr('1.5').value).toBe('<cn>1.5</cn>');
     expect(expr('(x)').value).toBe('<ci>x</ci>');
+    expect(expr('|x|').value).toBe('<apply><abs/><ci>x</ci></apply>');
 
     expect(expr('-1').value).toBe('<apply><minus/><cn>1</cn></apply>');
     expect(expr('-x').value).toBe('<apply><minus/><ci>x</ci></apply>');
@@ -104,6 +105,7 @@ test('basics', () => {
 
     expect(expr('1-(x+1)').value).toBe('<apply><minus/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>');
     expect(expr('1-x+1').value).toBe('<apply><plus/><apply><minus/><cn>1</cn><ci>x</ci></apply><cn>1</cn></apply>');
+
 
     expect(div('1','2').value).toBe('<apply><divide/><cn>1</cn><cn>2</cn></apply>');
     expect(div('1','x').value).toBe('<apply><divide/><cn>1</cn><ci>x</ci></apply>');

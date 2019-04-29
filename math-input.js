@@ -161,7 +161,7 @@ class MathInput extends HTMLElement {
         this.rootNode = MathNode.buildRootNode();
         this.wrapper.appendChild(this.rootNode.element);
 
-        var self = this;
+        let self = this;
         setInterval(function() {
             if(self._focused) {
                 self.cursorNode.toggleCursor();
@@ -244,7 +244,7 @@ class MathInput extends HTMLElement {
         if(e.ctrlKey)   //don't capture control combinations
             return;
 
-        var char = e.key || e.keyCode;
+        let char = e.key || e.keyCode;
         try {
             this.insertNodeByCharacter(char);
             e.preventDefault();
@@ -273,10 +273,10 @@ class MathInput extends HTMLElement {
 
         if(char == 'Backspace') {
             e.preventDefault();
-            var newCursor = this.cursorNode.previousSibling;
+            let newCursor = this.cursorNode.previousSibling;
 
             if(newCursor !== null) {
-                var oldCursor = this.cursorNode;
+                let oldCursor = this.cursorNode;
                 this.cursorNode = newCursor;
 
                 oldCursor.delete();
@@ -346,11 +346,11 @@ class MathInput extends HTMLElement {
      *                       inserted
      */
     insertNodeByCharacter(char) {
-        var node = MathNode.buildFromCharacter(char);
+        let node = MathNode.buildFromCharacter(char);
         this.insert(node);
 
         if(char == '/') {
-            var collected = node.collectNumerator();
+            let collected = node.collectNumerator();
             if(collected) {
                 this.cursorNode = node.denominator.startNode;
             } else {
@@ -379,7 +379,7 @@ class MathInput extends HTMLElement {
      *                       inserted
      */
     insertNodeByName(name) {
-        var node = MathNode.buildFromName(name);
+        let node = MathNode.buildFromName(name);
         this.insert(node);
 
         if(name == 'sqrt') {
