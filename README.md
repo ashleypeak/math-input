@@ -8,6 +8,12 @@ This component defines the `<math-input>` field, which behaves as a regular form
 
 The component is contained in two JavaScript files and one CSS file, `math-input.js`, `math-node.js` and `math-input.css`. Simply download them into your project folder, ensuring that the two JavaScript files are in the same directory.
 
+## Testing (for development)
+
+Testing is handled by Jest testing framework. To install the required dependencies, run `yarn install` in the project directory.
+
+To execute the tests, run `yarn test`.
+
 ## Usage
 
 First include the module and stylesheet:
