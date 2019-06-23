@@ -82,38 +82,96 @@ function conc(head, ...tail) {
     return head;
 }
 
-test('basics', () => {
+test('construct-cn', function() {
     expect(expr('1').value).toBe('<cn>1</cn>');
+});
+
+test('construct-ci', function() {
     expect(expr('x').value).toBe('<ci>x</ci>');
+});
+
+test('construct-pi', function() {
     expect(expr('pi').value).toBe('<pi/>');
+});
+
+test('construct-e', function() {
     expect(expr('e').value).toBe('<csymbol>e</csymbol>');
+});
+
+test('construct-float', function() {
     expect(expr('1.5').value).toBe('<cn>1.5</cn>');
+});
+
+test('construct-parentheses', function() {
     expect(expr('(x)').value).toBe('<ci>x</ci>');
+});
+
+test('construct-abs', function() {
     expect(expr('|x|').value).toBe('<apply><abs/><ci>x</ci></apply>');
+});
 
+test('construct-negative-cn', function() {
     expect(expr('-1').value).toBe('<apply><minus/><cn>1</cn></apply>');
+});
+
+test('construct-negative-ci', function() {
     expect(expr('-x').value).toBe('<apply><minus/><ci>x</ci></apply>');
+});
 
+test('construct-sin', function() {
     expect(expr('sin(x)').value).toBe('<apply><sin/><ci>x</ci></apply>');
+});
+
+test('construct-cos', function() {
     expect(expr('cos(x)').value).toBe('<apply><cos/><ci>x</ci></apply>');
+});
+
+test('construct-tan', function() {
     expect(expr('tan(x)').value).toBe('<apply><tan/><ci>x</ci></apply>');
+});
+
+test('construct-ln', function() {
     expect(expr('ln(x)').value).toBe('<apply><ln/><ci>x</ci></apply>');
+});
 
+test('construct-plus', function() {
     expect(expr('1+x').value).toBe('<apply><plus/><cn>1</cn><ci>x</ci></apply>');
-    expect(expr('1-x').value).toBe('<apply><minus/><cn>1</cn><ci>x</ci></apply>');
-    expect(expr('1*x').value).toBe('<apply><times/><cn>1</cn><ci>x</ci></apply>');
+});
 
+test('construct-minus', function() {
+    expect(expr('1-x').value).toBe('<apply><minus/><cn>1</cn><ci>x</ci></apply>');
+});
+
+test('construct-times', function() {
+    expect(expr('1*x').value).toBe('<apply><times/><cn>1</cn><ci>x</ci></apply>');
+});
+
+test('construct-bracketing', function() {
     expect(expr('1-(x+1)').value).toBe('<apply><minus/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>');
     expect(expr('1-x+1').value).toBe('<apply><plus/><apply><minus/><cn>1</cn><ci>x</ci></apply><cn>1</cn></apply>');
+});
 
-
+test('construct-divide-ci-ci', function() {
     expect(div('1','2').value).toBe('<apply><divide/><cn>1</cn><cn>2</cn></apply>');
+});
+
+test('construct-divide-ci-cn', function() {
     expect(div('1','x').value).toBe('<apply><divide/><cn>1</cn><ci>x</ci></apply>');
+});
+
+test('construct-divide-negative-denominator', function() {
     expect(div('1','-x').value).toBe('<apply><divide/><cn>1</cn><apply><minus/><ci>x</ci></apply></apply>');
+});
 
+test('construct-times-from-input', function() {
     expect(conc(expr('1'), expr('x')).value).toBe('<apply><times/><cn>1</cn><ci>x</ci></apply>');
-    expect(conc(expr('1'), pow('x')).value).toBe('<apply><power/><cn>1</cn><ci>x</ci></apply>');
+});
 
+test('construct-exponent-from-input', function() {
+    expect(conc(expr('1'), pow('x')).value).toBe('<apply><power/><cn>1</cn><ci>x</ci></apply>');
+});
+
+test('construct-nested-functions', function() {
     expect(expr('sin(cos(x))').value).toBe('<apply><sin/><apply><cos/><ci>x</ci></apply></apply>');
     expect(expr('-sin(cos(x))').value).toBe('<apply><minus/><apply><sin/><apply><cos/><ci>x</ci></apply></apply></apply>');
 });
