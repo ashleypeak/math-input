@@ -45,7 +45,7 @@ Most of the letters will be parsed as individual unknowns. Typing `xy`, for inst
 
 | Input | Interpretation |
 | ----- | -------------- |
-| `e`   | Euler's number |
+| `e`   | Euler's number ≈ 2.718 |
 | `π`   | The constant π ≈ 3.142 |
 | `pi`  | The constant π ≈ 3.142 |
 | `sin` | The sine function |
@@ -57,10 +57,11 @@ Most of the letters will be parsed as individual unknowns. Typing `xy`, for inst
 
 The field will also accept the following elements, which can't be easily typed:
 
-| Element     | Symbol | 
-| ----------- | ------ |
-| Square root | `sqrt` |
-| π           | `pi`   |
+| Element     | Symbol  |
+| ----------- | ------- |
+| Square root | `sqrt`  |
+| π           | `pi`    |
+| ∞           | `infty` |
 
 To input one of these, set the `<math-input>`'s `insert` attribute to its symbol in the right hand column. A buttton to add a square root symbol, for instance, might look like this:
 

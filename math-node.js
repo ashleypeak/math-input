@@ -266,6 +266,8 @@ class MathNode {
             return new SquareRootNode();
         } else if(name == 'pi') {
             return new AtomNode('π');
+        } else if(name == 'infty') {
+            return new AtomNode('∞');
         } else {
             throw new Error('Not implemented: ' + name);
         }
@@ -471,6 +473,15 @@ class ExpressionNode extends MathNode {
         if(piPattern.test(precis)) {
             let term = precis.match(piPattern)[0];
             let mathml = '<pi/>';
+
+            return this._parseTerm(term, mathml, precis, offset, preModifiers);
+        }
+
+        //if it starts with infinity
+        let inftyPattern = /^∞/;
+        if(inftyPattern.test(precis)) {
+            let term = precis.match(inftyPattern)[0];
+            let mathml = '<infty/>';
 
             return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
