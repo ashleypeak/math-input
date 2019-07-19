@@ -469,7 +469,7 @@ class ExpressionNode extends MathNode {
         }
 
         //if it starts with pi
-        let piPattern = /^pi|π/;
+        let piPattern = /^(pi|π)/;
         if(piPattern.test(precis)) {
             let term = precis.match(piPattern)[0];
             let mathml = '<pi/>';
