@@ -73,9 +73,11 @@ function pow(expNodes) {
  */
 function conc(head, ...tail) {
     for(let i = 0; i < tail.length; i++) {
-        // start at j=1 to ignore the StartNode
-        for(let j = 1; j < tail[i].nodes.length; j++) {
-            head.endNode.insertAfter(tail[i].nodes[j]);
+        // start at node index 1 to ignore the StartNode
+        // insertAfter removes the node from tail, so just keep appending
+        // nodes[1] until nodes has a length of 1.
+        while(tail[i].nodes.length > 1) {
+            head.endNode.insertAfter(tail[i].nodes[1]);
         }
     }
 
@@ -174,4 +176,18 @@ test('construct-exponent-from-input', function() {
 test('construct-nested-functions', function() {
     expect(expr('sin(cos(x))').value).toBe('<apply><sin/><apply><cos/><ci>x</ci></apply></apply>');
     expect(expr('-sin(cos(x))').value).toBe('<apply><minus/><apply><sin/><apply><cos/><ci>x</ci></apply></apply></apply>');
+});
+
+// this tests a situation where, due to poorly written regex, several symbols
+// before a 'π'' would be rendered as pi themselves, producing (in this case)
+//     <apply><times/><pi/><pi/></apply>
+test('regression-times-e-pi-character', function() {
+    expect(conc(expr('e'), expr('π')).value).toBe('<apply><times/><csymbol>e</csymbol><pi/></apply>');
+});
+
+// this tests the test suite itself - there was an error in the conc() function
+// which would only copy across every second character in the `tail` argument
+// due to a misunderstanding of the insertAfter() function. See conc().
+test('regression-times-e-pi-text', function() {
+    expect(conc(expr('e'), expr('pi')).value).toBe('<apply><times/><csymbol>e</csymbol><pi/></apply>');
 });
