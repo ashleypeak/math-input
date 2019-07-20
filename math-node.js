@@ -489,7 +489,7 @@ class ExpressionNode extends MathNode {
         //if it is the letter 'e', parse as Euler's number
         if(/^e/.test(precis)) {
             let term = precis[0];
-            let mathml = '<csymbol>e</csymbol>';
+            let mathml = '<exponentiale/>';
 
             return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }

@@ -97,7 +97,7 @@ test('construct-pi', function() {
 });
 
 test('construct-e', function() {
-    expect(expr('e').value).toBe('<csymbol>e</csymbol>');
+    expect(expr('e').value).toBe('<exponentiale/>');
 });
 
 test('construct-float', function() {
@@ -182,12 +182,12 @@ test('construct-nested-functions', function() {
 // before a 'π'' would be rendered as pi themselves, producing (in this case)
 //     <apply><times/><pi/><pi/></apply>
 test('regression-times-e-pi-character', function() {
-    expect(conc(expr('e'), expr('π')).value).toBe('<apply><times/><csymbol>e</csymbol><pi/></apply>');
+    expect(conc(expr('e'), expr('π')).value).toBe('<apply><times/><exponentiale/><pi/></apply>');
 });
 
 // this tests the test suite itself - there was an error in the conc() function
 // which would only copy across every second character in the `tail` argument
 // due to a misunderstanding of the insertAfter() function. See conc().
 test('regression-times-e-pi-text', function() {
-    expect(conc(expr('e'), expr('pi')).value).toBe('<apply><times/><csymbol>e</csymbol><pi/></apply>');
+    expect(conc(expr('e'), expr('pi')).value).toBe('<apply><times/><exponentiale/><pi/></apply>');
 });
