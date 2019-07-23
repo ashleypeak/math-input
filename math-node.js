@@ -481,7 +481,7 @@ class ExpressionNode extends MathNode {
         let inftyPattern = /^∞/;
         if(inftyPattern.test(precis)) {
             let term = precis.match(inftyPattern)[0];
-            let mathml = '<infty/>';
+            let mathml = '<infinity/>';
 
             return this._parseTerm(term, mathml, precis, offset, preModifiers);
         }
