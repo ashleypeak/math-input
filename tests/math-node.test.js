@@ -63,6 +63,25 @@ function pow(expNodes) {
     return expression;
 }
 
+/**
+ * Given a string representing the nodes inside the radicand, return an
+ * ExpressionNode containing just a SquareRotNode with the described radicand.
+ *
+ * NOTE: Returns ExpressionNode, not DivisionNode
+ *
+ * @param  {String} numNodes  The nodes to fill the root with
+ * @return {ExpressionNode}   An ExpressionNode containing the SquareRootNode
+ */
+function sqrt(radicandNodes) {
+    let expression = MathNode.buildRootNode();
+    let sqrtNode = MathNode.buildFromName('sqrt');
+    expression.endNode.insertAfter(sqrtNode);
+
+    expr(radicandNodes, sqrtNode.radicand);
+
+    return expression;
+}
+
  /**
  * Given one or more ExpressionNodes, concatenate their nodes into a single
  * expression and return that.
@@ -146,6 +165,10 @@ test('construct-minus', function() {
 
 test('construct-times', function() {
     expect(expr('1*x').value).toBe('<apply><times/><cn>1</cn><ci>x</ci></apply>');
+});
+
+test('construct-sqrt', function() {
+    expect(sqrt('3').value).toBe('<apply><root/><degree><cn>2</cn></degree><cn>3</cn></apply>');
 });
 
 test('construct-bracketing', function() {

@@ -1702,7 +1702,7 @@ class SquareRootNode extends UnitNode {
 
     /**
      * Get radix
-     * @return {MathNode} Numerator
+     * @return {MathNode} Radix
      */
     get radix() {
         return this._radix;
@@ -1710,7 +1710,7 @@ class SquareRootNode extends UnitNode {
 
     /**
      * Get radicand
-     * @return {MathNode} Numerator
+     * @return {MathNode} Radicand
      */
     get radicand() {
         return this._radicand;
@@ -1741,7 +1741,7 @@ class SquareRootNode extends UnitNode {
      * @return {String} The MathML string representing this element
      */
     get value() {
-        return '<apply><root/><degree><ci>2</ci></degree>' + this.radicand.value + '</apply>';
+        return '<apply><root/><degree><cn>2</cn></degree>' + this.radicand.value + '</apply>';
     }
 
     /**
