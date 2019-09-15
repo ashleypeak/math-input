@@ -19,7 +19,7 @@ To execute the tests, run `yarn test`.
 First include the module and stylesheet:
 
 ```html
-<link rel="stylesheet" href="../math-input.css"></link>
+<link rel="stylesheet" href="math-input.css"></link>
 <script type="module" src="math-input.js"></script>
 ```
 
