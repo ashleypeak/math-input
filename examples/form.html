@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en-au">
+    <head>
+        <meta charset="UTF-8">
+        <title>Math Input test</title>
+
+        <!-- webcomponents polyfill -->
+        <script src="../node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js"></script>
+
+        <script type="module" src="../math-input.js"></script>
+        <link rel="stylesheet" href="../math-input.css">
+
+        <script defer type="text/javascript">
+            function initInputObserver() {
+                let inp = document.getElementById('math1').realInput;
+                let outp = document.getElementById('mathout');
+
+                outp.value = "";
+
+                let observer = new MutationObserver(function(mut, obs) {
+                    outp.value = inp.value
+                })
+                observer.observe(inp, {attributes: true});
+            }
+        </script>
+        <style type="text/css">
+            #demotable th, #demotable td {
+                padding-bottom: 10px;
+            }
+            #demotable th {
+                vertical-align: top;
+                text-align: right;
+                padding-right: 10px;
+            }
+        </style>
+    </head>
+    <body onload='initInputObserver()'>
+        <form action="#">
+            <table id="demotable">
+                <tr>
+                    <th>Math input with buttons:</th>
+                    <td>
+                        <input type="button" value="sqrt" onclick="document.getElementById('math1').setAttribute('insert', 'sqrt');" />
+                        <input type="button" value="pi" onclick="document.getElementById('math1').setAttribute('insert', 'pi');" />
+                        <input type="button" value="e" onclick="document.getElementById('math1').setAttribute('insert', 'e');" />
+                        <input type="button" value="∞" onclick="document.getElementById('math1').setAttribute('insert', 'infty');" />
+                        <input type="button" value="/" onclick="document.getElementById('math1').setAttribute('insert', '/');" />
+                        <input type="button" value="(" onclick="document.getElementById('math1').setAttribute('insert', '(');" />
+                        <input type="button" value="0" onclick="document.getElementById('math1').setAttribute('insert', '0');" />
+                        <br />
+                        <math-input name="math1" id="math1" tabindex="1"></math-input>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Basic math input:</th>
+                    <td>
+                        <math-input name="math2" tabindex="2"></math-input>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Other input:</th>
+                    <td>
+                        <input type="text" name="other" tabindex="3" />
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        <input type="submit" tabindex="4" />
+                    </td>
+                </tr>
+            </table>
+
+            <h4>MathML content of the first math-input (for demonstation):</h4>
+            <textarea id='mathout' cols="100" readonly></textarea>
+        </form>
+    </body>
+</html>

@@ -43,6 +43,8 @@ Then use it as a regular form element:
 
 **Note:** Due to WebComponent limitations, you must give the field a `tabindex`.
 
+Refer to `examples/form.html` to see a full implementation.
+
 ## Math Support
 
 The field will accept the following characters as input:
