@@ -74,13 +74,15 @@ The field will also accept the following elements, which can't be easily typed:
 To input one of these, set the `<math-input>`'s `insert` attribute to its symbol in the right hand column. A buttton to add a square root symbol, for instance, might look like this:
 
 ```html
-<input type="button" value="Square Root" onclick="document.getElementsByName('fieldName')[0].setAttribute('insert', 'sqrt');" />
+<input type="button" value="Square Root" onclick="document.getElementById('fieldId').setAttribute('insert', 'sqrt');" />
 ```
+
+**Note:** Be careful using document.getElementsByName() as the `<math-input>` field, on instantiation, will create a hidden input field with the same name to allow proper integration with forms.
 
 Any value which could be inserted by keyboard can also be inserted in this way. A button for '0', for example, would look like this:
 
 ```html
-<input type="button" value="0" onclick="document.getElementsByName('fieldName')[0].setAttribute('insert', '0');" />
+<input type="button" value="0" onclick="document.getElementById('fieldId').setAttribute('insert', '0');" />
 ```
 
 The attribute will auto-clear when the element has been inserted, there's no need to clear it before inserting another element.
