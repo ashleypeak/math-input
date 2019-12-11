@@ -16,9 +16,17 @@ To execute the tests, run `npm run test`.
 
 ## Usage
 
-First include the module and stylesheet:
+First, install the NPM dependencies (the only dependency is a polyfill to allow WebComponent support in old browsers and Edge). In the project directory, run:
+
+```bash
+$ npm install --production
+```
+
+In the HTML file, include the polyfill, module and stylesheet:
 
 ```html
+<script src="node_modules/@webcomponents/webcomponentsjs/webcomponents-bundle.js"></script>
+
 <link rel="stylesheet" href="math-input.css"></link>
 <script type="module" src="math-input.js"></script>
 ```

@@ -173,11 +173,12 @@ class MathInput extends HTMLElement {
     connectedCallback() {
         //proxy input
         this.realInput = document.createElement('input');
+        this.realInput.type = "hidden";
         this.realInput.name = this.getAttribute('name');
         this.realInput.value = this.getAttribute('value');
         this.realInput.tabIndex = -1;
         this.realInput.setAttribute('class', 'real-input');
-        this.appendChild(this.realInput);
+        this.parentNode.insertBefore(this.realInput, this);
 
         this._connected = true;
     }
