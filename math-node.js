@@ -1154,7 +1154,7 @@ class DivisionNode extends UnitNode {
         } while(node = node.previousSibling)
 
         //match everything that should move to numerator, fairly arbitrary
-        let match = precis.match(/[a-zA-Zα-ωΑ-Ω0-9]+$/);
+        let match = precis.match(/[a-zA-Zα-ωΑ-Ω0-9%]+$/);
         if(match !== null) {
             for(let i = 0; i < match[0].length; i++) {
                 this.numerator.startNode.insertAfter(this.previousSibling);
