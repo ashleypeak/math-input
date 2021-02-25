@@ -160,6 +160,15 @@ class MathInput extends HTMLElement {
         this.addEventListener('focus', this._focus);
         this.addEventListener('blur', this._blur);
         this.addEventListener('click', this._click);
+
+        // If the 'value' attribute already set, draw the MathNodes represented
+        // by that MathML into the field
+        let value = this.getAttribute('value');
+        if(value !== null) {
+            this.insertNodesByMathML(value);
+            this.blur(); // Inserting nodes focusses a field, but we don't want
+                         // that here.
+        }
     }
 
 
@@ -364,8 +373,7 @@ class MathInput extends HTMLElement {
      * single-character descriptors, like '1', and generally inserts that value
      * more or less directly into the field.
      * 
-     * @param  {String} char The character whose equivalent node is to be
-     *                       inserted
+     * @param  {String} name The name of the node to be inserted
      */
     insertNodeByName(name) {
         let node = MathNode.buildFromName(name);
@@ -374,6 +382,26 @@ class MathInput extends HTMLElement {
         if(name == 'sqrt') {
             this.cursorNode = node.radicand.startNode;
         }
+
+        this.focus();
+    }
+
+    /**
+     * Insert a set of new nodes, whose identities are determined by the
+     * parameter `mml`.
+     *
+     * This function will take any MathML which the <math-input> field is
+     * capable of outputting, it needn't be a simple atomic node.
+     * 
+     * @param  {String} mml The MathML of the node to be inserted
+     */
+    insertNodesByMathML(mml) {
+        let nodes = MathNode.buildNodesetFromMathML(mml);
+
+        let self = this;
+        nodes.forEach(function(node) {
+            self.insert(node);
+        });
 
         this.focus();
     }

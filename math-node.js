@@ -1,3 +1,16 @@
+/**
+ * Assert that `condition` is true. If it is not, raise an error with
+ * message `message`.
+ * 
+ * @param  {Boolean} condition The condition being asserted
+ * @param  {String}  message   The error string to be raised if condition
+ *                             is false
+ */
+function assert(condition, message) {
+    if(!condition) {
+        throw new Error(message);
+    }
+}
 
 /**
  * Virtual class, don't instantiate.
@@ -270,6 +283,60 @@ class MathNode {
             return new AtomNode('∞');
         } else {
             throw new Error('Not implemented: ' + name);
+        }
+    }
+
+    /**
+     * Take a MathML string and build an array of MathNodes for that MathML to
+     * return.
+     *
+     * Unlike the previous functions, this returns an array of nodes, because
+     * arbitrary MathML can't be represented with a single node.
+     * 
+     * @param  {String}   mml The MathML of the MathNode to build
+     * @return {Array}        The resultant array of MathNodes
+     */
+    static buildNodesetFromMathML(mml) {
+        let parser = new DOMParser();
+        let doc = parser.parseFromString(mml, 'text/xml');
+
+        return MathNode._buildNodesetFromMathMLNode(doc.firstChild);
+    }
+
+    /**
+     * Take a node from a MathML XML document and build an array of MathNodes
+     * from that.
+     * 
+     * @param  {Element}  node Any MathML node
+     * @return {Array}         The resultant array of MathNodes
+     */
+    static _buildNodesetFromMathMLNode(node) {
+        console.log(typeof node);
+        switch(node.tagName) {
+            // case 'apply':
+            //     return this._parseApplyToFunction(node);
+            // case 'ci':
+            //     assert(node.textContent === 'x', '<ci> can only take \'x\' in <math-plot>.')
+
+            //     return (x => x);
+            case 'cn':
+                assert(/^-?[0-9]+(\.[0-9]+)?$/.test(node.textContent), '<cn> must contain a number.');
+
+                return node.textContent.split('').map(char => new AtomNode(char));
+            // case 'degree':
+            // case 'logbase':
+            //     return this._parseNodeToFunction(node.firstChild);
+            // case 'pi':
+            //     return (x => Math.PI);
+            // case 'exponentiale':
+            //     return (x => Math.E);
+            // case 'list':
+            //     let elementNodes = Array.from(node.children);
+            //     let elements = elementNodes.map(this._parseNodeToFunction, this);
+
+            //     return (x => elements.reduce((a, e) => a.concat([e(x)]), []));
+            default:
+                throw new Error('Unknown MathML element: ' + node.tagName);
         }
     }
 }
