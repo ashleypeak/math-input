@@ -13,6 +13,19 @@ function assert(condition, message) {
 }
 
 /**
+ * Given a MathML node, assert that it has exactly `count` children, or
+ * else raise an error.
+ * 
+ * @param  {Element} node  The MathML node whose children are being counted
+ * @param  {Number}  count The expected number of children
+ */
+function assertChildren(node, count) {
+    let action = node.firstChild.tagName;
+    assert(node.childElementCount === count,
+        `<apply><${action}/> must have ${count-1} children.`);
+}
+
+/**
  * Virtual class, don't instantiate.
  *
  * MathNode and its children represent the equation as it appears in the
@@ -248,11 +261,11 @@ class MathNode {
      * Take a character (from input, usually) and determine based on value
      * what MathNode class to return.
      * 
-     * @param  {String} char The character to create a MathNode from
-     * @return {MathNode} The resultant MathNode
+     * @param  {String}   char The character to create a MathNode from
+     * @return {MathNode}      The resultant MathNode
      */
     static buildFromCharacter(char) {
-        if(/^[a-zA-Zα-ωΑ-Ω0-9.+\-*]$/.test(char)) {
+        if(/^[a-zA-Zα-ωΑ-Ω0-9.+\-*∞]$/.test(char)) {
             return new AtomNode(char);
         } else if(/^\/$/.test(char)) {
             return new DivisionNode();
@@ -265,6 +278,17 @@ class MathNode {
         } else {
             throw new Error('Not yet implemented: ' + char);
         }
+    }
+
+    /**
+     * Take a string of characters accepted by MathNode.buildFromCharacter(),
+     * and return an array of MathNodes described by that string.
+     * 
+     * @param  {String}   str The string to create the MathNode array from
+     * @return {Array}        The resultant array of MathNodes
+     */
+    static _buildNodesetFromString(str) {
+        return str.split('').map(MathNode.buildFromCharacter);
     }
 
     /**
@@ -312,8 +336,8 @@ class MathNode {
      */
     static _buildNodesetFromMathMLNode(node) {
         switch(node.tagName) {
-            // case 'apply':
-            //     return this._parseApplyToFunction(node);
+            case 'apply':
+                return MathNode._buildNodesetFromMathMLApplyNode(node);
             case 'ci':
                 assert(/^[a-zA-Zα-ωΑ-Ω]$/.test(node.textContent),
                     '<ci> must contain a single latin/greek letter.');
@@ -324,9 +348,9 @@ class MathNode {
                     '<cn> must contain a number.');
 
                 return node.textContent.split('').map(char => new AtomNode(char));
-            case 'degree':
-            case 'logbase':
-                return this._buildNodesetFromMathMLNode(node.firstChild);
+            // case 'degree':
+            // case 'logbase':
+            //     return MathNode._buildNodesetFromMathMLNode(node.firstChild);
             case 'pi':
                 return [new AtomNode('π')];
             case 'exponentiale':
@@ -335,6 +359,103 @@ class MathNode {
                 return [new AtomNode('∞')];
             default:
                 throw new Error('Unknown MathML element: ' + node.tagName);
+        }
+    }
+
+    /**
+     * Take an <apply> node from a MathML XML document and build an array of
+     * MathNodes from that.
+     * 
+     * @see _buildNodesetFromMathMLNode()
+     * @param  {Element}  node A MathML <apply> node
+     * @return {Array}         The resultant array of MathNodes
+     */
+    static _buildNodesetFromMathMLApplyNode(node) {
+        assert(node.childElementCount >= 2, "<apply> must have at least two children.")
+
+        let action = node.firstChild.tagName;
+        let argNodes = Array.from(node.children).slice(1);
+        let args = argNodes.map(MathNode._buildNodesetFromMathMLNode);
+
+        switch(action) {
+            // case 'plus':
+            //     assertChildren(node, 3);
+            //     return ((x) => args[0](x) + args[1](x));
+            // case 'minus':
+            //     assert(node.childElementCount === 2 || node.childElementCount === 3,
+            //         '<apply><minus/> must have 2 or 3 children.');
+
+            //     if(node.childElementCount === 3) {
+            //         return ((x) => args[0](x) - args[1](x));
+            //     } else {
+            //         return ((x) => -args[0](x));
+            //     }
+            // case 'times':
+            //     assertChildren(node, 3);
+            //     return ((x) => args[0](x) * args[1](x));
+            // case 'divide':
+            //     assertChildren(node, 3);
+            //     return ((x) => args[0](x) / args[1](x));
+            // case 'power':
+            //     assertChildren(node, 3);
+            //     return ((x) => args[0](x) ** args[1](x));
+            // case 'root':
+            //     assert(node.childElementCount === 2 || node.childElementCount === 3,
+            //         '<apply><root/> must have 2 or 3 children.');
+
+            //     if(node.childElementCount === 3) {
+            //         return ((x) => args[1](x) ** (1 / args[0](x)));
+            //     } else {
+            //         return ((x) => Math.sqrt(args[0](x)));
+            //     }
+            case 'sin':
+                assertChildren(node, 2);
+
+                return [].concat(
+                        MathNode._buildNodesetFromString('sin('),
+                        args[0],
+                        MathNode._buildNodesetFromString(')'));
+            case 'cos':
+                assertChildren(node, 2);
+
+                return [].concat(
+                        MathNode._buildNodesetFromString('cos('),
+                        args[0],
+                        MathNode._buildNodesetFromString(')'));
+            case 'tan':
+                assertChildren(node, 2);
+
+                return [].concat(
+                        MathNode._buildNodesetFromString('tan('),
+                        args[0],
+                        MathNode._buildNodesetFromString(')'));
+            case 'abs':
+                assertChildren(node, 2);
+
+                return [].concat(
+                        MathNode._buildNodesetFromString('|'),
+                        args[0],
+                        MathNode._buildNodesetFromString('|'));
+            case 'ln':
+                assertChildren(node, 2);
+
+                return [].concat(
+                        MathNode._buildNodesetFromString('ln('),
+                        args[0],
+                        MathNode._buildNodesetFromString(')'));
+            // case 'log':
+            //     let childCount = node.childElementCount;
+
+            //     assert([2, 3].includes(childCount),
+            //         `<apply><log/> must have 1 or 2 children.`);
+
+            //     if(childCount === 2) {
+            //         return ((x) => Math.log(args[0](x)) / Math.log(10));
+            //     } else {
+            //         return ((x) => Math.log(args[1](x)) / Math.log(args[0](x)));
+            //     }
+            default:
+                throw new Error('Unknown <apply> action: ' + action);
         }
     }
 }

@@ -262,13 +262,30 @@ test('from-mathml-infinity', function() {
     expect(exprFromMathML(mml).value).toBe(mml);
 });
 
-// test('from-mathml-parentheses', function() {
-//     expect(expr('(x)').value).toBe('<ci>x</ci>');
-// });
+test('from-mathml-sin', function() {
+    let mml = '<apply><sin/><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
 
-// test('from-mathml-abs', function() {
-//     expect(expr('|x|').value).toBe('<apply><abs/><ci>x</ci></apply>');
-// });
+test('from-mathml-cos', function() {
+    let mml = '<apply><cos/><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-tan', function() {
+    let mml = '<apply><tan/><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-abs', function() {
+    let mml = '<apply><abs/><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-ln', function() {
+    let mml = '<apply><ln/><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
 
 // test('from-mathml-negative-cn', function() {
 //     expect(expr('-1').value).toBe('<apply><minus/><cn>1</cn></apply>');
@@ -276,22 +293,6 @@ test('from-mathml-infinity', function() {
 
 // test('from-mathml-negative-ci', function() {
 //     expect(expr('-x').value).toBe('<apply><minus/><ci>x</ci></apply>');
-// });
-
-// test('from-mathml-sin', function() {
-//     expect(expr('sin(x)').value).toBe('<apply><sin/><ci>x</ci></apply>');
-// });
-
-// test('from-mathml-cos', function() {
-//     expect(expr('cos(x)').value).toBe('<apply><cos/><ci>x</ci></apply>');
-// });
-
-// test('from-mathml-tan', function() {
-//     expect(expr('tan(x)').value).toBe('<apply><tan/><ci>x</ci></apply>');
-// });
-
-// test('from-mathml-ln', function() {
-//     expect(expr('ln(x)').value).toBe('<apply><ln/><ci>x</ci></apply>');
 // });
 
 // test('from-mathml-plus', function() {
