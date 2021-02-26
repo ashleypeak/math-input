@@ -214,3 +214,128 @@ test('regression-times-e-pi-character', function() {
 test('regression-times-e-pi-text', function() {
     expect(conc(expr('e'), expr('pi')).value).toBe('<apply><times/><exponentiale/><pi/></apply>');
 });
+
+/**
+ * Given a string of MathML, return an ExpressionNode built from that string.
+ *
+ * @param  {String}         mml The MathML to build the expression from
+ * @return {ExpressionNode}     The expression
+ */
+function exprFromMathML(mml) {
+    let expression = MathNode.buildRootNode();
+
+    let nodes = MathNode.buildNodesetFromMathML(mml);
+    nodes.forEach(function(node) {
+        expression.endNode.insertAfter(node);
+    });
+
+    return expression;
+}
+
+test('from-mathml-cn', function() {
+    let mml = '<cn>1</cn>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-cn-float', function() {
+    let mml = '<cn>1.5</cn>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-ci', function() {
+    let mml = '<ci>x</ci>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-pi', function() {
+    let mml = '<pi/>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-e', function() {
+    let mml = '<exponentiale/>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-infinity', function() {
+    let mml = '<infinity/>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+// test('from-mathml-parentheses', function() {
+//     expect(expr('(x)').value).toBe('<ci>x</ci>');
+// });
+
+// test('from-mathml-abs', function() {
+//     expect(expr('|x|').value).toBe('<apply><abs/><ci>x</ci></apply>');
+// });
+
+// test('from-mathml-negative-cn', function() {
+//     expect(expr('-1').value).toBe('<apply><minus/><cn>1</cn></apply>');
+// });
+
+// test('from-mathml-negative-ci', function() {
+//     expect(expr('-x').value).toBe('<apply><minus/><ci>x</ci></apply>');
+// });
+
+// test('from-mathml-sin', function() {
+//     expect(expr('sin(x)').value).toBe('<apply><sin/><ci>x</ci></apply>');
+// });
+
+// test('from-mathml-cos', function() {
+//     expect(expr('cos(x)').value).toBe('<apply><cos/><ci>x</ci></apply>');
+// });
+
+// test('from-mathml-tan', function() {
+//     expect(expr('tan(x)').value).toBe('<apply><tan/><ci>x</ci></apply>');
+// });
+
+// test('from-mathml-ln', function() {
+//     expect(expr('ln(x)').value).toBe('<apply><ln/><ci>x</ci></apply>');
+// });
+
+// test('from-mathml-plus', function() {
+//     expect(expr('1+x').value).toBe('<apply><plus/><cn>1</cn><ci>x</ci></apply>');
+// });
+
+// test('from-mathml-minus', function() {
+//     expect(expr('1-x').value).toBe('<apply><minus/><cn>1</cn><ci>x</ci></apply>');
+// });
+
+// test('from-mathml-times', function() {
+//     expect(expr('1*x').value).toBe('<apply><times/><cn>1</cn><ci>x</ci></apply>');
+// });
+
+// test('from-mathml-sqrt', function() {
+//     expect(sqrt('3').value).toBe('<apply><root/><degree><cn>2</cn></degree><cn>3</cn></apply>');
+// });
+
+// test('from-mathml-bracketing', function() {
+//     expect(expr('1-(x+1)').value).toBe('<apply><minus/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>');
+//     expect(expr('1-x+1').value).toBe('<apply><plus/><apply><minus/><cn>1</cn><ci>x</ci></apply><cn>1</cn></apply>');
+// });
+
+// test('from-mathml-divide-ci-ci', function() {
+//     expect(div('1','2').value).toBe('<apply><divide/><cn>1</cn><cn>2</cn></apply>');
+// });
+
+// test('from-mathml-divide-ci-cn', function() {
+//     expect(div('1','x').value).toBe('<apply><divide/><cn>1</cn><ci>x</ci></apply>');
+// });
+
+// test('from-mathml-divide-negative-denominator', function() {
+//     expect(div('1','-x').value).toBe('<apply><divide/><cn>1</cn><apply><minus/><ci>x</ci></apply></apply>');
+// });
+
+// test('from-mathml-times-from-input', function() {
+//     expect(conc(expr('1'), expr('x')).value).toBe('<apply><times/><cn>1</cn><ci>x</ci></apply>');
+// });
+
+// test('from-mathml-exponent-from-input', function() {
+//     expect(conc(expr('1'), pow('x')).value).toBe('<apply><power/><cn>1</cn><ci>x</ci></apply>');
+// });
+
+// test('from-mathml-nested-functions', function() {
+//     expect(expr('sin(cos(x))').value).toBe('<apply><sin/><apply><cos/><ci>x</ci></apply></apply>');
+//     expect(expr('-sin(cos(x))').value).toBe('<apply><minus/><apply><sin/><apply><cos/><ci>x</ci></apply></apply></apply>');
+// });

@@ -311,30 +311,28 @@ class MathNode {
      * @return {Array}         The resultant array of MathNodes
      */
     static _buildNodesetFromMathMLNode(node) {
-        console.log(typeof node);
         switch(node.tagName) {
             // case 'apply':
             //     return this._parseApplyToFunction(node);
-            // case 'ci':
-            //     assert(node.textContent === 'x', '<ci> can only take \'x\' in <math-plot>.')
+            case 'ci':
+                assert(/^[a-zA-Zα-ωΑ-Ω]$/.test(node.textContent),
+                    '<ci> must contain a single latin/greek letter.');
 
-            //     return (x => x);
+                return [new AtomNode(node.textContent)];
             case 'cn':
-                assert(/^-?[0-9]+(\.[0-9]+)?$/.test(node.textContent), '<cn> must contain a number.');
+                assert(/^-?[0-9]+(\.[0-9]+)?$/.test(node.textContent),
+                    '<cn> must contain a number.');
 
                 return node.textContent.split('').map(char => new AtomNode(char));
-            // case 'degree':
-            // case 'logbase':
-            //     return this._parseNodeToFunction(node.firstChild);
-            // case 'pi':
-            //     return (x => Math.PI);
-            // case 'exponentiale':
-            //     return (x => Math.E);
-            // case 'list':
-            //     let elementNodes = Array.from(node.children);
-            //     let elements = elementNodes.map(this._parseNodeToFunction, this);
-
-            //     return (x => elements.reduce((a, e) => a.concat([e(x)]), []));
+            case 'degree':
+            case 'logbase':
+                return this._buildNodesetFromMathMLNode(node.firstChild);
+            case 'pi':
+                return [new AtomNode('π')];
+            case 'exponentiale':
+                return [new AtomNode('e')];
+            case 'infinity':
+                return [new AtomNode('∞')];
             default:
                 throw new Error('Unknown MathML element: ' + node.tagName);
         }
