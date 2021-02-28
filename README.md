@@ -31,17 +31,33 @@ In the HTML file, include the polyfill, module and stylesheet:
 <script type="module" src="math-input.js"></script>
 ```
 
-**Note:** Due to the expanding nature of the input, if you wish to change its size use the `min-width` and `min-height` properties instead of `width` and `height`.
+**Note:** Due to the expanding nature of the `<math-input>` field, if you wish to change its size use the `min-width` and `min-height` properties instead of `width` and `height`.
 
 Then use it as a regular form element:
 
 ```html
 <form...>
-    <math-input name="fieldName" tabindex="1"></math-input>
+    <math-input name="fieldname" tabindex="1"></math-input>
 </form>
 ```
 
 **Note:** Due to WebComponent limitations, you must give the field a `tabindex`.
+
+The `value` attribute of the field will be a representation, in MathML, of whatever is typed in the field. If you type in `1+x`, the `value` attribute will contain:
+
+```xml
+<apply><plus /><cn>1</cn><ci>x</ci></apply>
+```
+
+The value of the field can also be preset by setting the `value` attribute, this will create a field with a value of 1 already entered:
+
+```html
+<form...>
+    <math-input name="fieldname" tabindex="1" value="<cn>1</cn>"></math-input>
+</form>
+```
+
+**Note:** The field's value cannot be changed after initialisation using the `value` attribute.
 
 Refer to `examples/form.html` to see a full implementation.
 
