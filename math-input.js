@@ -165,9 +165,7 @@ class MathInput extends HTMLElement {
         // by that MathML into the field
         let value = this.getAttribute('value');
         if(value !== null) {
-            this.insertNodesByMathML(value);
-            this.blur(); // Inserting nodes focusses a field, but we don't want
-                         // that here.
+            this.rootNode.value = value;
         }
     }
 
@@ -382,26 +380,6 @@ class MathInput extends HTMLElement {
         if(name == 'sqrt') {
             this.cursorNode = node.radicand.startNode;
         }
-
-        this.focus();
-    }
-
-    /**
-     * Insert a set of new nodes, whose identities are determined by the
-     * parameter `mml`.
-     *
-     * This function will take any MathML which the <math-input> field is
-     * capable of outputting, it needn't be a simple atomic node.
-     * 
-     * @param  {String} mml The MathML of the node to be inserted
-     */
-    insertNodesByMathML(mml) {
-        let nodes = MathNode.buildNodesetFromMathML(mml);
-
-        let self = this;
-        nodes.forEach(function(node) {
-            self.insert(node);
-        });
 
         this.focus();
     }

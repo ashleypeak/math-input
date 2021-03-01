@@ -224,10 +224,7 @@ test('regression-times-e-pi-text', function() {
 function exprFromMathML(mml) {
     let expression = MathNode.buildRootNode();
 
-    let nodes = MathNode.buildNodesetFromMathML(mml);
-    nodes.forEach(function(node) {
-        expression.endNode.insertAfter(node);
-    });
+    expression.value = mml;
 
     return expression;
 }
