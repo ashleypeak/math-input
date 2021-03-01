@@ -303,13 +303,14 @@ test('from-mathml-plus', function() {
 });
 
 test('from-mathml-minus', function() {
-    expect(expr('1-x').value).toBe('<apply><minus/><cn>1</cn><ci>x</ci></apply>');
+    let mml = '<apply><minus/><cn>1</cn><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
 });
 
-// test('from-mathml-times', function() {
-//     let mml = '<apply><times/><cn>1</cn><ci>x</ci></apply>';
-//     expect(exprFromMathML(mml).value).toBe(mml);
-// });
+test('from-mathml-times', function() {
+    let mml = '<apply><times/><cn>1</cn><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
 
 // test('from-mathml-sqrt', function() {
 //     expect(sqrt('3').value).toBe('<apply><root/><degree><cn>2</cn></degree><cn>3</cn></apply>');
@@ -329,6 +330,11 @@ test('from-mathml-bracketing', function() {
     let mml2Expr = exprFromMathML(mml2);
     expect(mml2Expr.value).toBe(mml2);
     expect(mml2Expr.precis).toBe('_1-x+1');
+
+    let mml3 = '<apply><times/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>';
+    let mml3Expr = exprFromMathML(mml3);
+    expect(mml3Expr.value).toBe(mml3);
+    expect(mml3Expr.precis).toBe('_1*(x+1)');
 });
 
 // test('from-mathml-divide-ci-ci', function() {
@@ -343,15 +349,14 @@ test('from-mathml-bracketing', function() {
 //     expect(div('1','-x').value).toBe('<apply><divide/><cn>1</cn><apply><minus/><ci>x</ci></apply></apply>');
 // });
 
-// test('from-mathml-times-from-input', function() {
-//     expect(conc(expr('1'), expr('x')).value).toBe('<apply><times/><cn>1</cn><ci>x</ci></apply>');
-// });
+test('from-mathml-nested-functions', function() {
+    let mml1 = '<apply><sin/><apply><cos/><ci>x</ci></apply></apply>';
+    let mml1Expr = exprFromMathML(mml1);
+    expect(mml1Expr.value).toBe(mml1);
+    expect(mml1Expr.precis).toBe('_sin(cos(x))');
 
-// test('from-mathml-exponent-from-input', function() {
-//     expect(conc(expr('1'), pow('x')).value).toBe('<apply><power/><cn>1</cn><ci>x</ci></apply>');
-// });
-
-// test('from-mathml-nested-functions', function() {
-//     expect(expr('sin(cos(x))').value).toBe('<apply><sin/><apply><cos/><ci>x</ci></apply></apply>');
-//     expect(expr('-sin(cos(x))').value).toBe('<apply><minus/><apply><sin/><apply><cos/><ci>x</ci></apply></apply></apply>');
-// });
+    let mml2 = '<apply><minus/><apply><cos/><apply><sin/><ci>x</ci></apply></apply></apply>';
+    let mml2Expr = exprFromMathML(mml2);
+    expect(mml2Expr.value).toBe(mml2);
+    expect(mml2Expr.precis).toBe('_-cos(sin(x))');
+});

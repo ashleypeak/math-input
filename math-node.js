@@ -375,13 +375,14 @@ class MathNode {
                     '<apply><minus/> must have 2 or 3 children.');
 
                 return MathNode._buildNodesetFromMathMLMinusNode(args)
-            // case 'times':
-            //     assertChildren(node, 3);
+            case 'times':
+                assertChildren(node, 3);
 
-            //     return MathNode._nodesetFromString('%*%', args)
+                return MathNode._buildNodesetFromMathMLTimesNode(args)
             // case 'divide':
             //     assertChildren(node, 3);
-            //     return ((x) => args[0](x) / args[1](x));
+
+            //     return MathNode._buildNodesetFromMathMLDivideNode(args)
             // case 'power':
             //     assertChildren(node, 3);
             //     return ((x) => args[0](x) ** args[1](x));
@@ -442,6 +443,58 @@ class MathNode {
             return MathNode._nodesetFromString('-' + layout_right, args)
         }
     }
+
+    /**
+     * Take the arguments from a <times> node from a MathML XML document and
+     * build an array of MathNodes from that.
+     * 
+     * @see _buildNodesetFromMathMLApplyNode()
+     * @param  {Array}  args An array of XML elements, the arguments to the
+     *                       <times> node.
+     * @return {Array}       The resultant array of MathNodes
+     */
+    static _buildNodesetFromMathMLTimesNode(args) {
+        let layout_left = '%';
+        let layout_right = '%';
+
+        let type_left = MathNode._nodeType(args[0]);
+        if(['plus', 'minus'].includes(type_left)) {
+            layout_left = '(%)';
+        }
+
+        let type_right = MathNode._nodeType(args[1]);
+        if(['plus', 'minus'].includes(type_right)) {
+            layout_right = '(%)';
+        }
+
+        return MathNode._nodesetFromString(layout_left + '*' + layout_right, args)
+    }
+
+    /**
+     * Take the arguments from a <divide> node from a MathML XML document and
+     * build an array of MathNodes from that.
+     * 
+     * @see _buildNodesetFromMathMLApplyNode()
+     * @param  {Array}  args An array of XML elements, the arguments (numerator
+     *                       and denominator) to the <divide> node.
+     * @return {Array}       The resultant array of MathNodes
+     */
+    // static _buildNodesetFromMathMLDivideNode(args) {
+    //     let argMathNodes = args.map(MathNode._buildNodesetFromMathMLNode);
+
+    //     let divisionNode = new DivisionNode();
+
+    //     argMathNodes[0].forEach(function(node) {
+    //         node.parent = divisionNode;
+    //         divisionNode.numerator.endNode.insertAfter(node);
+    //     });
+
+    //     argMathNodes[1].forEach(function(node) {
+    //         divisionNode.denominator.endNode.insertAfter(node);
+    //     });
+
+    //     return [divisionNode];
+    // }
 
     /**
      * Take a MathML node and, if it's an <apply> node, return its function,
