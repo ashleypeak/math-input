@@ -287,34 +287,49 @@ test('from-mathml-ln', function() {
     expect(exprFromMathML(mml).value).toBe(mml);
 });
 
-// test('from-mathml-negative-cn', function() {
-//     expect(expr('-1').value).toBe('<apply><minus/><cn>1</cn></apply>');
-// });
+test('from-mathml-negative-cn', function() {
+    let mml = '<apply><minus/><cn>1</cn></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
 
-// test('from-mathml-negative-ci', function() {
-//     expect(expr('-x').value).toBe('<apply><minus/><ci>x</ci></apply>');
-// });
+test('from-mathml-negative-ci', function() {
+    let mml = '<apply><minus/><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
 
-// test('from-mathml-plus', function() {
-//     expect(expr('1+x').value).toBe('<apply><plus/><cn>1</cn><ci>x</ci></apply>');
-// });
+test('from-mathml-plus', function() {
+    let mml = '<apply><plus/><cn>1</cn><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
 
-// test('from-mathml-minus', function() {
-//     expect(expr('1-x').value).toBe('<apply><minus/><cn>1</cn><ci>x</ci></apply>');
-// });
+test('from-mathml-minus', function() {
+    expect(expr('1-x').value).toBe('<apply><minus/><cn>1</cn><ci>x</ci></apply>');
+});
 
 // test('from-mathml-times', function() {
-//     expect(expr('1*x').value).toBe('<apply><times/><cn>1</cn><ci>x</ci></apply>');
+//     let mml = '<apply><times/><cn>1</cn><ci>x</ci></apply>';
+//     expect(exprFromMathML(mml).value).toBe(mml);
 // });
 
 // test('from-mathml-sqrt', function() {
 //     expect(sqrt('3').value).toBe('<apply><root/><degree><cn>2</cn></degree><cn>3</cn></apply>');
 // });
 
-// test('from-mathml-bracketing', function() {
-//     expect(expr('1-(x+1)').value).toBe('<apply><minus/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>');
-//     expect(expr('1-x+1').value).toBe('<apply><plus/><apply><minus/><cn>1</cn><ci>x</ci></apply><cn>1</cn></apply>');
-// });
+test('from-mathml-bracketing', function() {
+    let mml1 = '<apply><minus/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>';
+    let mml1Expr = exprFromMathML(mml1);
+    expect(mml1Expr.value).toBe(mml1);
+
+    // precis is a purely internal structure, and shouldn't really be tested,
+    // but it's unlikely to change format and is the easiest way to check
+    // the visual output of the <math-input> field.
+    expect(mml1Expr.precis).toBe('_1-(x+1)');
+
+    let mml2 = '<apply><plus/><apply><minus/><cn>1</cn><ci>x</ci></apply><cn>1</cn></apply>';
+    let mml2Expr = exprFromMathML(mml2);
+    expect(mml2Expr.value).toBe(mml2);
+    expect(mml2Expr.precis).toBe('_1-x+1');
+});
 
 // test('from-mathml-divide-ci-ci', function() {
 //     expect(div('1','2').value).toBe('<apply><divide/><cn>1</cn><cn>2</cn></apply>');

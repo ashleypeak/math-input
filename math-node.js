@@ -281,17 +281,6 @@ class MathNode {
     }
 
     /**
-     * Take a string of characters accepted by MathNode.buildFromCharacter(),
-     * and return an array of MathNodes described by that string.
-     * 
-     * @param  {String}   str The string to create the MathNode array from
-     * @return {Array}        The resultant array of MathNodes
-     */
-    static _buildNodesetFromString(str) {
-        return str.split('').map(MathNode.buildFromCharacter);
-    }
-
-    /**
      * Take a named symbol (like 'sqrt') and determine based on that name what
      * MathNode class to return.
      * 
@@ -374,25 +363,22 @@ class MathNode {
         assert(node.childElementCount >= 2, "<apply> must have at least two children.")
 
         let action = node.firstChild.tagName;
-        let argNodes = Array.from(node.children).slice(1);
-        let args = argNodes.map(MathNode._buildNodesetFromMathMLNode);
+        let args = Array.from(node.children).slice(1);
 
         switch(action) {
-            // case 'plus':
-            //     assertChildren(node, 3);
-            //     return ((x) => args[0](x) + args[1](x));
-            // case 'minus':
-            //     assert(node.childElementCount === 2 || node.childElementCount === 3,
-            //         '<apply><minus/> must have 2 or 3 children.');
+            case 'plus':
+                assertChildren(node, 3);
 
-            //     if(node.childElementCount === 3) {
-            //         return ((x) => args[0](x) - args[1](x));
-            //     } else {
-            //         return ((x) => -args[0](x));
-            //     }
+                return MathNode._nodesetFromString('%+%', args)
+            case 'minus':
+                assert(node.childElementCount === 2 || node.childElementCount === 3,
+                    '<apply><minus/> must have 2 or 3 children.');
+
+                return MathNode._buildNodesetFromMathMLMinusNode(args)
             // case 'times':
             //     assertChildren(node, 3);
-            //     return ((x) => args[0](x) * args[1](x));
+
+            //     return MathNode._nodesetFromString('%*%', args)
             // case 'divide':
             //     assertChildren(node, 3);
             //     return ((x) => args[0](x) / args[1](x));
@@ -411,52 +397,102 @@ class MathNode {
             case 'sin':
                 assertChildren(node, 2);
 
-                return [].concat(
-                        MathNode._buildNodesetFromString('sin('),
-                        args[0],
-                        MathNode._buildNodesetFromString(')'));
+                return MathNode._nodesetFromString('sin(%)', args);
             case 'cos':
                 assertChildren(node, 2);
 
-                return [].concat(
-                        MathNode._buildNodesetFromString('cos('),
-                        args[0],
-                        MathNode._buildNodesetFromString(')'));
+                return MathNode._nodesetFromString('cos(%)', args);
             case 'tan':
                 assertChildren(node, 2);
 
-                return [].concat(
-                        MathNode._buildNodesetFromString('tan('),
-                        args[0],
-                        MathNode._buildNodesetFromString(')'));
+                return MathNode._nodesetFromString('tan(%)', args);
             case 'abs':
                 assertChildren(node, 2);
 
-                return [].concat(
-                        MathNode._buildNodesetFromString('|'),
-                        args[0],
-                        MathNode._buildNodesetFromString('|'));
+                return MathNode._nodesetFromString('|%|', args);
             case 'ln':
                 assertChildren(node, 2);
 
-                return [].concat(
-                        MathNode._buildNodesetFromString('ln('),
-                        args[0],
-                        MathNode._buildNodesetFromString(')'));
-            // case 'log':
-            //     let childCount = node.childElementCount;
-
-            //     assert([2, 3].includes(childCount),
-            //         `<apply><log/> must have 1 or 2 children.`);
-
-            //     if(childCount === 2) {
-            //         return ((x) => Math.log(args[0](x)) / Math.log(10));
-            //     } else {
-            //         return ((x) => Math.log(args[1](x)) / Math.log(args[0](x)));
-            //     }
+                return MathNode._nodesetFromString('ln(%)', args);
             default:
                 throw new Error('Unknown <apply> action: ' + action);
         }
+    }
+
+    /**
+     * Take the arguments from a <minus> node from a MathML XML document and
+     * build an array of MathNodes from that.
+     * 
+     * @see _buildNodesetFromMathMLApplyNode()
+     * @param  {Array}  args An array of XML elements, the arguments to the
+     *                       <minus> node.
+     * @return {Array}       The resultant array of MathNodes
+     */
+    static _buildNodesetFromMathMLMinusNode(args) {
+        let type_right = MathNode._nodeType(args[args.length - 1]);
+        if(['plus', 'minus', 'times'].includes(type_right)) {
+            var layout_right = '(%)';
+        } else {
+            var layout_right = '%';
+        }
+
+        if(args.length === 2) {
+            return MathNode._nodesetFromString('%-' + layout_right, args)
+        } else {
+            return MathNode._nodesetFromString('-' + layout_right, args)
+        }
+    }
+
+    /**
+     * Take a MathML node and, if it's an <apply> node, return its function,
+     * otherwise return its tagName.
+     *
+     * `node` is an XML node output by DOMParser.
+     *
+     * E.g.:
+     * _nodeType(DOMParser.parseFromString('<cn>2</cn>')) => 'cn'
+     * _nodeType(DOMParser.parseFromString('<apply><minus/><cn>2</cn></apply>')) => 'minus'
+     * 
+     * @see _buildNodesetFromMathMLApplyNode()
+     * @param  {Element}  node A MathML node
+     * @return {STring}        The type of the node, as described above
+     */
+    static _nodeType(node) {
+        if(node.tagName === 'apply') {
+            return node.firstChild.tagName;
+        } else {
+            return node.tagName;
+        }
+    }
+
+    /**
+     * Return an array of MathNodes representing the string `str`, substituting
+     * '%' characters with entries from `args`.
+     *
+     * `args` is a list of MathML nodes, as returned by DOMParser, which are to
+     * be substituted into the output.
+     * 
+     * @see _buildNodesetFromMathMLApplyNode()
+     * @param  {String}  str  A string of characters to be converted into
+     *                        MathNodes
+     * @param  {Array}   args An array of MathML nodes
+     * @return {Array}        The resultant array of MathNodes
+     */
+    static _nodesetFromString(str, args) {
+        let argMathNodes = args.map(MathNode._buildNodesetFromMathMLNode);
+        let argIndex = 0;
+
+        let ret = [];
+
+        str.split('').forEach(function(char) {
+            if(char === '%') {
+                ret = ret.concat(argMathNodes[argIndex++]);
+            } else {
+                ret.push(MathNode.buildFromCharacter(char));
+            }
+        });
+
+        return ret;
     }
 }
 
