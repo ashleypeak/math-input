@@ -176,7 +176,7 @@ test('construct-bracketing', function() {
     expect(expr('1-x+1').value).toBe('<apply><plus/><apply><minus/><cn>1</cn><ci>x</ci></apply><cn>1</cn></apply>');
 });
 
-test('construct-divide-ci-ci', function() {
+test('construct-divide-cn-cn', function() {
     expect(div('1','2').value).toBe('<apply><divide/><cn>1</cn><cn>2</cn></apply>');
 });
 
@@ -309,9 +309,29 @@ test('from-mathml-times', function() {
     expect(exprFromMathML(mml).value).toBe(mml);
 });
 
-// test('from-mathml-sqrt', function() {
-//     expect(sqrt('3').value).toBe('<apply><root/><degree><cn>2</cn></degree><cn>3</cn></apply>');
-// });
+test('from-mathml-power', function() {
+    let mml = '<apply><power/><cn>1</cn><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-power-nonunit-base', function() {
+    let mml = '<apply><power/><apply><plus/><cn>1</cn><cn>2</cn></apply><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-sqrt', function() {
+    let mml = '<apply><root/><degree><cn>2</cn></degree><apply><plus/><cn>3</cn><ci>x</ci></apply></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+// We use a different, but equivalent, MathML string for the output because
+// the system always outputs the MathML of a square root with the radix
+// specified.
+test('from-mathml-sqrt-noradix', function() {
+    let mml = '<apply><root/><apply><plus/><cn>3</cn><ci>x</ci></apply></apply>';
+    let mml_output = '<apply><root/><degree><cn>2</cn></degree><apply><plus/><cn>3</cn><ci>x</ci></apply></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml_output);
+});
 
 test('from-mathml-bracketing', function() {
     let mml1 = '<apply><minus/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>';
@@ -334,17 +354,25 @@ test('from-mathml-bracketing', function() {
     expect(mml3Expr.precis).toBe('_1*(x+1)');
 });
 
-// test('from-mathml-divide-ci-ci', function() {
-//     expect(div('1','2').value).toBe('<apply><divide/><cn>1</cn><cn>2</cn></apply>');
-// });
+test('from-mathml-divide-cn-cn', function() {
+    let mml = '<apply><divide/><cn>1</cn><cn>2</cn></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
 
-// test('from-mathml-divide-ci-cn', function() {
-//     expect(div('1','x').value).toBe('<apply><divide/><cn>1</cn><ci>x</ci></apply>');
-// });
+test('from-mathml-divide-ci-cn', function() {
+    let mml = '<apply><divide/><cn>1</cn><cn>2</cn></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
 
-// test('from-mathml-divide-negative-denominator', function() {
-//     expect(div('1','-x').value).toBe('<apply><divide/><cn>1</cn><apply><minus/><ci>x</ci></apply></apply>');
-// });
+test('from-mathml-divide-negative-denominator', function() {
+    let mml = '<apply><divide/><cn>1</cn><apply><minus/><ci>x</ci></apply></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-sin-divide', function() {
+    let mml = '<apply><sin/><apply><divide/><cn>1</cn><ci>x</ci></apply></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
 
 test('from-mathml-nested-functions', function() {
     let mml1 = '<apply><sin/><apply><cos/><ci>x</ci></apply></apply>';

@@ -750,7 +750,6 @@ class ExpressionNode extends MathNode {
      * 
      * @see this.appendMathMLNode()
      * @param  {Element}  node A MathML <apply> node
-     * @return {Array}         The resultant array of MathNodes
      */
     _appendMathMLApplyNode(node) {
         assert(node.childElementCount >= 2, "<apply> must have at least two children.")
@@ -775,22 +774,22 @@ class ExpressionNode extends MathNode {
 
                 this._appendMathMLTimesNode(args);
                 break;
-            // case 'divide':
-            //     assertChildren(node, 3);
+            case 'divide':
+                assertChildren(node, 3);
 
-            //     this._appendMathMLDivideNode(args);
-            // case 'power':
-            //     assertChildren(node, 3);
-            //     return ((x) => args[0](x) ** args[1](x));
-            // case 'root':
-            //     assert(node.childElementCount === 2 || node.childElementCount === 3,
-            //         '<apply><root/> must have 2 or 3 children.');
+                this._appendMathMLDivideNode(args);
+                break;
+            case 'power':
+                assertChildren(node, 3);
 
-            //     if(node.childElementCount === 3) {
-            //         return ((x) => args[1](x) ** (1 / args[0](x)));
-            //     } else {
-            //         return ((x) => Math.sqrt(args[0](x)));
-            //     }
+                this._appendMathMLPowerNode(args);
+                break;
+            case 'root':
+                assert(node.childElementCount === 2 || node.childElementCount === 3,
+                    '<apply><root/> must have 2 or 3 children.');
+
+                this._appendMathMLRootNode(args);
+                break;
             case 'sin':
                 assertChildren(node, 2);
 
@@ -828,7 +827,6 @@ class ExpressionNode extends MathNode {
      * @see this._appendMathMLApplyNode()
      * @param  {Array}  args An array of XML elements, the arguments to the
      *                       <minus> node.
-     * @return {Array}       The resultant array of MathNodes
      */
     _appendMathMLMinusNode(args) {
         let type_right = ExpressionNode._nodeType(args[args.length - 1]);
@@ -852,7 +850,6 @@ class ExpressionNode extends MathNode {
      * @see this._appendMathMLApplyNode()
      * @param  {Array}  args An array of XML elements, the arguments to the
      *                       <times> node.
-     * @return {Array}       The resultant array of MathNodes
      */
     _appendMathMLTimesNode(args) {
         let layout_left = '%';
@@ -878,17 +875,74 @@ class ExpressionNode extends MathNode {
      * @see this._appendMathMLApplyNode()
      * @param  {Array}  args An array of XML elements, the arguments (numerator
      *                       and denominator) to the <divide> node.
-     * @return {Array}       The resultant array of MathNodes
      */
-    // _appendMathMLDivideNode(args) {
-    //     let divisionNode = new DivisionNode();
+    _appendMathMLDivideNode(args) {
+        let divisionNode = new DivisionNode();
 
-    //     this.cursor.insertAfter(divisionNode);
-    //     this.cursor = divisionNode;
+        this.cursor.insertAfter(divisionNode);
 
-    //     divisionNode.numerator.appendMathMLNode(args[0]);
-    //     divisionNode.denominator.appendMathMLNode(args[1]);
-    // }
+        this.cursor = divisionNode.numerator.startNode;
+        this.appendMathMLNode(args[0]);
+        this.cursor = divisionNode.denominator.startNode;
+        this.appendMathMLNode(args[1]);
+
+        this.cursor = divisionNode;
+    }
+
+    /**
+     * Take the arguments from a <power> node from a MathML XML document and
+     * append its content to this ExpressionNode.
+     * 
+     * @see this._appendMathMLApplyNode()
+     * @param  {Array}  args An array of XML elements, the arguments (base and
+     *                       exponent) to the <power> node.
+     */
+    _appendMathMLPowerNode(args) {
+        // First, insert the base
+        let layout_base = '(%)';
+
+        let type_base = ExpressionNode._nodeType(args[0]);
+        if(['ci', 'cn', 'pi', 'exponentiale', 'infinity'].includes(type_base)) {
+            layout_base = '%';
+        }
+        this._appendString(layout_base, args.slice(0, 1))
+
+        // Then, create the exponent
+        let exponentNode = new ExponentNode();
+        this.cursor.insertAfter(exponentNode);
+
+        this.cursor = exponentNode.exponent.startNode;
+        this.appendMathMLNode(args[1]);
+
+        this.cursor = exponentNode;
+    }
+
+    /**
+     * Take the arguments from a <root> node from a MathML XML document and
+     * append its content to this ExpressionNode.
+     *
+     * NOTE: This simply ignores the radix, if provided, as the input field can
+     * only support square roots currently.
+     * 
+     * @see this._appendMathMLApplyNode()
+     * @param  {Array}  args An array of XML elements, the argument to the
+     *                       <root> node.
+     */
+    _appendMathMLRootNode(args) {
+        // Then, create the exponent
+        let squareRootNode = new SquareRootNode();
+        this.cursor.insertAfter(squareRootNode);
+
+        this.cursor = squareRootNode.radicand.startNode;
+
+        if(args.length == 2) { // If a radix is provided
+            this.appendMathMLNode(args[1]);
+        } else {
+            this.appendMathMLNode(args[0]);
+        }
+
+        this.cursor = squareRootNode;
+    }
 
     /**
      * Take a MathML node and, if it's an <apply> node, return its first node's
@@ -902,7 +956,7 @@ class ExpressionNode extends MathNode {
      * 
      * @see this._appendMathMLApplyNode()
      * @param  {Element}  node A MathML node
-     * @return {STring}        The type of the node, as described above
+     * @return {String}        The type of the node, as described above
      */
     static _nodeType(node) {
         if(node.tagName === 'apply') {
@@ -923,7 +977,6 @@ class ExpressionNode extends MathNode {
      * @param  {String}  str  A string of characters to be converted into
      *                        MathNodes
      * @param  {Array}   args An array of MathML nodes
-     * @return {Array}        The resultant array of MathNodes
      */
     _appendString(str, args) {
         let argIndex = 0;
