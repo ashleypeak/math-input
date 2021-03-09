@@ -389,6 +389,7 @@ class ExpressionNode extends MathNode {
         let doc = parser.parseFromString(mml, 'text/xml');
 
         this.appendMathMLNode(doc.firstChild);
+        this.cursor.toggleCursor(false);
     }
 
     /**
