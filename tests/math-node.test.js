@@ -351,7 +351,7 @@ test('from-mathml-bracketing', function() {
     let mml3 = '<apply><times/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>';
     let mml3Expr = exprFromMathML(mml3);
     expect(mml3Expr.value).toBe(mml3);
-    expect(mml3Expr.precis).toBe('_1*(x+1)');
+    expect(mml3Expr.precis).toBe('_1(x+1)');
 });
 
 test('from-mathml-divide-cn-cn', function() {

@@ -866,7 +866,7 @@ class ExpressionNode extends MathNode {
             layout_right = '(%)';
         }
 
-        this._appendString(layout_left + '*' + layout_right, args);
+        this._appendString(layout_left + layout_right, args);
     }
 
     /**
