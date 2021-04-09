@@ -151,6 +151,18 @@ test('construct-tan', function() {
     expect(expr('tan(x)').value).toBe('<apply><tan/><ci>x</ci></apply>');
 });
 
+test('construct-arcsin', function() {
+    expect(expr('arcsin(x)').value).toBe('<apply><arcsin/><ci>x</ci></apply>');
+});
+
+test('construct-arccos', function() {
+    expect(expr('arccos(x)').value).toBe('<apply><arccos/><ci>x</ci></apply>');
+});
+
+test('construct-arctan', function() {
+    expect(expr('arctan(x)').value).toBe('<apply><arctan/><ci>x</ci></apply>');
+});
+
 test('construct-ln', function() {
     expect(expr('ln(x)').value).toBe('<apply><ln/><ci>x</ci></apply>');
 });
@@ -271,6 +283,21 @@ test('from-mathml-cos', function() {
 
 test('from-mathml-tan', function() {
     let mml = '<apply><tan/><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-arcsin', function() {
+    let mml = '<apply><arcsin/><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-arccos', function() {
+    let mml = '<apply><arccos/><ci>x</ci></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
+});
+
+test('from-mathml-arctan', function() {
+    let mml = '<apply><arctan/><ci>x</ci></apply>';
     expect(exprFromMathML(mml).value).toBe(mml);
 });
 

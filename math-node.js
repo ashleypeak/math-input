@@ -502,7 +502,7 @@ class ExpressionNode extends MathNode {
         }
 
         //if it starts with a known function
-        let functionPattern = /^(sin|cos|tan|ln)/;
+        let functionPattern = /^(ln|(?:arc)?(?:sin|cos|tan))/;
         if(functionPattern.test(precis)) {
             let term = precis.match(functionPattern)[0];
             let len = term.length;
@@ -657,7 +657,7 @@ class ExpressionNode extends MathNode {
         //apply in reverse order
         let preModifier = null;
         while(typeof (preModifier = preModifiers.pop()) !== 'undefined') {
-            if(['sin', 'cos', 'tan', 'ln'].includes(preModifier)) {
+            if(/^(ln|(arc)?(sin|cos|tan))$/.test(preModifier)) {
                 mathml = `<apply><${preModifier}/>${mathml}</apply>`;
             } else if(preModifier === 'negative') {
                 mathml = `<apply><minus/>${mathml}</apply>`;
@@ -805,6 +805,21 @@ class ExpressionNode extends MathNode {
                 assertChildren(node, 2);
 
                 this._appendString('tan(%)', args);
+                break;
+            case 'arcsin':
+                assertChildren(node, 2);
+
+                this._appendString('arcsin(%)', args);
+                break;
+            case 'arccos':
+                assertChildren(node, 2);
+
+                this._appendString('arccos(%)', args);
+                break;
+            case 'arctan':
+                assertChildren(node, 2);
+
+                this._appendString('arctan(%)', args);
                 break;
             case 'abs':
                 assertChildren(node, 2);
