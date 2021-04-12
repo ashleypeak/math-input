@@ -77,6 +77,9 @@ Most of the letters will be parsed as individual unknowns. Typing `xy`, for inst
 | `sin` | The sine function |
 | `cos` | The cosine function |
 | `tan` | The tangent function |
+| `arcsin` | The arcsine function |
+| `arccos` | The arccosine function |
+| `arctan` | The arctangent function |
 | `ln`  | The natural log function |
 
 ### Input Buttons
