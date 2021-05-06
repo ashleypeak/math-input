@@ -846,7 +846,7 @@ class ExpressionNode extends MathNode {
      */
     _appendMathMLMinusNode(args) {
         let type_right = ExpressionNode._nodeType(args[args.length - 1]);
-        if(['plus', 'minus', 'times'].includes(type_right)) {
+        if(['plus', 'minus'].includes(type_right)) {
             var layout_right = '(%)';
         } else {
             var layout_right = '%';

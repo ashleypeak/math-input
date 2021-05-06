@@ -360,25 +360,35 @@ test('from-mathml-sqrt-noradix', function() {
     expect(exprFromMathML(mml).value).toBe(mml_output);
 });
 
-test('from-mathml-bracketing', function() {
-    let mml1 = '<apply><minus/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>';
-    let mml1Expr = exprFromMathML(mml1);
-    expect(mml1Expr.value).toBe(mml1);
+// precis is a purely internal structure, and shouldn't really be tested, but
+// it's unlikely to change format and is the easiest way to check the visual
+// output of the <math-input> field.
+test('from-mathml-bracketing-minus-plus', function() {
+    let mml = '<apply><minus/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>';
+    let mmlExpr = exprFromMathML(mml);
+    expect(mmlExpr.value).toBe(mml);
+    expect(mmlExpr.precis).toBe('_1-(x+1)');
+});
 
-    // precis is a purely internal structure, and shouldn't really be tested,
-    // but it's unlikely to change format and is the easiest way to check
-    // the visual output of the <math-input> field.
-    expect(mml1Expr.precis).toBe('_1-(x+1)');
+test('from-mathml-bracketing-plus-minus', function() {
+    let mml = '<apply><plus/><apply><minus/><cn>1</cn><ci>x</ci></apply><cn>1</cn></apply>';
+    let mmlExpr = exprFromMathML(mml);
+    expect(mmlExpr.value).toBe(mml);
+    expect(mmlExpr.precis).toBe('_1-x+1');
+});
 
-    let mml2 = '<apply><plus/><apply><minus/><cn>1</cn><ci>x</ci></apply><cn>1</cn></apply>';
-    let mml2Expr = exprFromMathML(mml2);
-    expect(mml2Expr.value).toBe(mml2);
-    expect(mml2Expr.precis).toBe('_1-x+1');
+test('from-mathml-bracketing-times-plus', function() {
+    let mml = '<apply><times/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>';
+    let mmlExpr = exprFromMathML(mml);
+    expect(mmlExpr.value).toBe(mml);
+    expect(mmlExpr.precis).toBe('_1(x+1)');
+});
 
-    let mml3 = '<apply><times/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>';
-    let mml3Expr = exprFromMathML(mml3);
-    expect(mml3Expr.value).toBe(mml3);
-    expect(mml3Expr.precis).toBe('_1(x+1)');
+test('from-mathml-bracketing-minus-times', function() {
+    let mml = '<apply><minus/><cn>1</cn><apply><times/><cn>2</cn><ci>x</ci></apply></apply>';
+    let mmlExpr = exprFromMathML(mml);
+    expect(mmlExpr.value).toBe(mml);
+    expect(mmlExpr.precis).toBe('_1-2x');
 });
 
 test('from-mathml-divide-cn-cn', function() {
