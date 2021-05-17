@@ -265,7 +265,7 @@ class MathNode {
      * @return {MathNode}      The resultant MathNode
      */
     static buildFromCharacter(char) {
-        if(/^[a-zA-Zα-ωΑ-Ω0-9.+\-*∞]$/.test(char)) {
+        if(/^[a-zA-Zα-ωΑ-Ω0-9.+\-*∞!]$/.test(char)) {
             return new AtomNode(char);
         } else if(/^\/$/.test(char)) {
             return new DivisionNode();
@@ -634,7 +634,10 @@ class ExpressionNode extends MathNode {
         if(precis[term.length] === '^') {
             let exponent_mathml = this.nodes[offset+term.length].value;
             term += '^';
-            mathml = '<apply><power/>' + mathml + exponent_mathml +  '</apply>';
+            mathml = '<apply><power/>' + mathml + exponent_mathml + '</apply>';
+        } else if(precis[term.length] === '!') {
+            term += '!';
+            mathml = '<apply><factorial/>' + mathml + '</apply>';
         }
 
         return [term, mathml, precis, offset];
@@ -830,6 +833,11 @@ class ExpressionNode extends MathNode {
                 assertChildren(node, 2);
 
                 this._appendString('ln(%)', args);
+                break;
+            case 'factorial':
+                assertChildren(node, 2);
+
+                this._appendString('%!', args);
                 break;
             default:
                 throw new Error('Unknown <apply> action: ' + action);

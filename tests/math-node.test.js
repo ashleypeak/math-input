@@ -183,6 +183,10 @@ test('construct-sqrt', function() {
     expect(sqrt('3').value).toBe('<apply><root/><degree><cn>2</cn></degree><cn>3</cn></apply>');
 });
 
+test('construct-factorial', function() {
+    expect(expr('3!').value).toBe('<apply><factorial/><cn>3</cn></apply>');
+});
+
 test('construct-bracketing', function() {
     expect(expr('1-(x+1)').value).toBe('<apply><minus/><cn>1</cn><apply><plus/><ci>x</ci><cn>1</cn></apply></apply>');
     expect(expr('1-x+1').value).toBe('<apply><plus/><apply><minus/><cn>1</cn><ci>x</ci></apply><cn>1</cn></apply>');
@@ -358,6 +362,11 @@ test('from-mathml-sqrt-noradix', function() {
     let mml = '<apply><root/><apply><plus/><cn>3</cn><ci>x</ci></apply></apply>';
     let mml_output = '<apply><root/><degree><cn>2</cn></degree><apply><plus/><cn>3</cn><ci>x</ci></apply></apply>';
     expect(exprFromMathML(mml).value).toBe(mml_output);
+});
+
+test('from-mathml-factorial', function() {
+    let mml = '<apply><factorial/><cn>3</cn></apply>';
+    expect(exprFromMathML(mml).value).toBe(mml);
 });
 
 // precis is a purely internal structure, and shouldn't really be tested, but
