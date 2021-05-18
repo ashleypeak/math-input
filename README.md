@@ -65,7 +65,7 @@ Refer to `examples/form.html` to see a full implementation.
 
 The field will accept the following characters as input:
 
-`[a-zA-Z0-9α-ωΑ-Ω.+\-*\/()\|^]`
+`[a-zA-Z0-9α-ωΑ-Ω.+\-*∞!\/()\|^]`
 
 Most of the letters will be parsed as individual unknowns. Typing `xy`, for instance, will be interpreted as 'x times y'. There are, however, a few exceptions:
 
