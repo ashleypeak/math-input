@@ -199,20 +199,37 @@ class MathInput extends HTMLElement {
      */
     attributeChangedCallback(name, old, value) {
         if(this._connected) {
-            if(name === 'value') {
-                this.realInput.value = value;
-            } else if(name === 'insert' && value !== '') {
-                try {
-                    this.insertNodeByCharacter(value);
-                } catch(err) {
-                    try {
-                        this.insertNodeByName(value);
-                    } catch(err) {
-                        throw new Error(`Insert value not supported: ${value}`);
-                    }
-                }
+            switch(name) {
+                case 'value':
+                    this.realInput.value = value;
+                    break;
+                case 'insert':
+                    if(value !== '') {
+                        try {
+                            this.insertNodeByCharacter(value);
+                        } catch(err) {
+                            try {
+                                this.insertNodeByName(value);
+                            } catch(err) {
+                                throw new Error(`Insert value not supported: ${value}`);
+                            }
+                        }
 
-                this.setAttribute('insert', '');
+                        this.setAttribute('insert', '');
+                    }
+                    break;
+                case 'action':
+                    if(value !== '') {
+                        if(value === 'backspace') {
+                            this.backspace();
+                            this.focus();
+                        } else {
+                            throw new Error(`Action not supported: ${value}`);
+                        }
+
+                        this.setAttribute('action', '');
+                    }
+                    break;
             }
         }
     }
@@ -224,7 +241,7 @@ class MathInput extends HTMLElement {
      * @return {array} The list of attributes to watch
      */
     static get observedAttributes() {
-        return ['value', 'insert'];
+        return ['value', 'insert', 'action'];
     }
 
 
@@ -269,15 +286,7 @@ class MathInput extends HTMLElement {
 
         if(char == 'Backspace') {
             e.preventDefault();
-            let newCursor = this.cursorNode.previousSibling;
-
-            if(newCursor !== null) {
-                let oldCursor = this.cursorNode;
-                this.cursorNode = newCursor;
-
-                oldCursor.delete();
-                this.updateValue();
-            }
+            this.backspace()
         }
     }
 
@@ -411,6 +420,21 @@ class MathInput extends HTMLElement {
 
             this.classList.add('error');
             this.setAttribute('value', '');
+        }
+    }
+
+    /**
+     * Delete the node immediately before the cursor position.
+     */
+    backspace() {
+        let newCursor = this.cursorNode.previousSibling;
+
+        if(newCursor !== null) {
+            let oldCursor = this.cursorNode;
+            this.cursorNode = newCursor;
+
+            oldCursor.delete();
+            this.updateValue();
         }
     }
 }

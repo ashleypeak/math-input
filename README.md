@@ -107,3 +107,19 @@ Any value which could be inserted by keyboard can also be inserted in this way. 
 ```
 
 The attribute will auto-clear when the element has been inserted, there's no need to clear it before inserting another element.
+
+### Other Actions
+
+You can perform other actions by setting the field's `action` attribute. The current supported actions are:
+
+| Action      | Description |
+| ----------- | ----------- |
+| `backspace` | Delete the symbol immediately left of the cursor |
+
+A button which performed the backspace action would look like this:
+
+```html
+<input type="button" value="0" onclick="document.getElementById('fieldId').setAttribute('action', 'backspace');" />
+```
+
+The attribute will auto-clear when the action has been performed, there's no need to clear it before performing another action.
