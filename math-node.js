@@ -853,8 +853,13 @@ class ExpressionNode extends MathNode {
      *                       <minus> node.
      */
     _appendMathMLMinusNode(args) {
-        let type_right = ExpressionNode._nodeType(args[args.length - 1]);
+        let node_right = args[args.length - 1];
+        let type_right = ExpressionNode._nodeType(node_right);
+
         if(['plus', 'minus'].includes(type_right)) {
+            var layout_right = '(%)';
+        } else if(type_right == 'cn' && node_right.textContent.startsWith('-')) {
+            // If we're subtracting a negative number
             var layout_right = '(%)';
         } else {
             var layout_right = '%';

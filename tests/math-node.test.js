@@ -360,8 +360,8 @@ test('from-mathml-sqrt', function() {
 // specified.
 test('from-mathml-sqrt-noradix', function() {
     let mml = '<apply><root/><apply><plus/><cn>3</cn><ci>x</ci></apply></apply>';
-    let mml_output = '<apply><root/><degree><cn>2</cn></degree><apply><plus/><cn>3</cn><ci>x</ci></apply></apply>';
-    expect(exprFromMathML(mml).value).toBe(mml_output);
+    let mmlOutput = '<apply><root/><degree><cn>2</cn></degree><apply><plus/><cn>3</cn><ci>x</ci></apply></apply>';
+    expect(exprFromMathML(mml).value).toBe(mmlOutput);
 });
 
 test('from-mathml-factorial', function() {
@@ -398,6 +398,15 @@ test('from-mathml-bracketing-minus-times', function() {
     let mmlExpr = exprFromMathML(mml);
     expect(mmlExpr.value).toBe(mml);
     expect(mmlExpr.precis).toBe('_1-2x');
+});
+
+// Output is different but equivalent.
+test('from-mathml-bracketing-minus-negative', function() {
+    let mml = '<apply><minus/><cn>2</cn><cn>-1</cn></apply>'
+    let mmlExpr = exprFromMathML(mml);
+    let mmlOutput = '<apply><minus/><cn>2</cn><apply><minus/><cn>1</cn></apply></apply>';
+    expect(mmlExpr.value).toBe(mmlOutput);
+    expect(mmlExpr.precis).toBe('_2-(-1)');
 });
 
 test('from-mathml-divide-cn-cn', function() {
