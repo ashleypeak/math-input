@@ -1,3 +1,7 @@
+/**
+ * @jest-environment jsdom
+ */
+
 import MathNode from '../math-node.js';
 
 /**
